@@ -11,7 +11,13 @@ const LoginPage: React.FC = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Login attempt:', { email, password });
-    navigate('/');
+    if (email === 'admin@nexus.tech') {
+      navigate('/admin');
+    } else if (email === 'talento@nexus.tech') {
+      navigate('/provider');
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
