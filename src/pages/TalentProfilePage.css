@@ -1,0 +1,367 @@
+/* src/pages/TalentProfilePage.css */
+
+.profile-container {
+  min-height: 100vh;
+  background-color: #050505;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 4rem;
+}
+
+.profile-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header Section */
+.profile-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile-header-left {
+  display: flex;
+  gap: 2rem;
+}
+
+.profile-avatar-wrapper {
+  position: relative;
+}
+
+.profile-avatar {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #121212;
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+}
+
+.profile-verified-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background-color: #00e5ff;
+  color: black;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #050505;
+}
+
+.profile-info h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.1;
+}
+
+.profile-level-tag {
+  display: inline-block;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  margin-bottom: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-role {
+  font-size: 1.1rem;
+  color: #00e5ff;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.profile-meta {
+  display: flex;
+  gap: 1.5rem;
+  color: #a1a1aa;
+  font-size: 0.85rem;
+}
+
+.profile-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* Stats Row */
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.profile-stat-card {
+  background-color: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.profile-stat-label {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.profile-stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-stat-sub {
+  font-size: 0.8rem;
+  color: #71717a;
+}
+
+.profile-stat-sub.highlight {
+  color: #00e5ff;
+}
+
+.profile-stars {
+  display: flex;
+  color: #00e5ff;
+  gap: 2px;
+}
+
+/* Two Column Layout */
+.profile-content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 3rem;
+}
+
+/* Left Column */
+.profile-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-about-text {
+  color: #d4d4d8;
+  line-height: 1.7;
+  font-size: 0.95rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-portfolio-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  margin-top: 3rem;
+}
+
+.profile-portfolio-link {
+  color: #a1a1aa;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.profile-portfolio-link:hover {
+  color: white;
+}
+
+.profile-portfolio-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.profile-portfolio-item {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-portfolio-item.large {
+  grid-column: span 2;
+  aspect-ratio: 21/9;
+}
+
+.profile-portfolio-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.profile-portfolio-item:hover img {
+  transform: scale(1.05);
+}
+
+/* Right Column */
+.profile-sidebar-card {
+  background-color: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.profile-sidebar-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+
+.profile-skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.profile-skill-tag {
+  background-color: rgba(0, 229, 255, 0.1);
+  color: #00e5ff;
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.profile-info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.profile-info-label {
+  color: #a1a1aa;
+}
+
+.profile-info-value {
+  color: white;
+  font-weight: 500;
+}
+
+.profile-timeline {
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.profile-timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.35rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 2px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
+.profile-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.45rem;
+  top: 0.25rem;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #00e5ff;
+  box-shadow: 0 0 8px #00e5ff;
+}
+
+.profile-timeline-title {
+  font-weight: 600;
+  color: white;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-timeline-subtitle {
+  color: #a1a1aa;
+  font-size: 0.8rem;
+  margin-bottom: 0.25rem;
+}
+
+.profile-timeline-date {
+  color: #71717a;
+  font-size: 0.75rem;
+}
+
+/* Testimonial Card */
+.profile-testimonial {
+  background-color: rgba(0, 229, 255, 0.05);
+  border: 1px solid rgba(0, 229, 255, 0.1);
+}
+
+.profile-test-user {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.profile-test-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #27272a;
+}
+
+.profile-test-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.profile-test-role {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.profile-test-quote {
+  font-size: 0.85rem;
+  color: #d4d4d8;
+  font-style: italic;
+  line-height: 1.6;
+}

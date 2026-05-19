@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { ShieldCheck, Mail, Lock, ArrowRight } from 'lucide-react';
+import { Fingerprint, AtSign, Lock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import './Auth.css';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,77 +22,99 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden text-white">
-      {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-zinc-800/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-white/5 rounded-full blur-[150px] pointer-events-none" />
+    <div className="auth-container">
+      <div className="auth-bg-glow" />
+      
+      {/* Top Navigation */}
+      <header className="auth-nav" style={{ justifyContent: 'center' }}>
+        <a href="/" className="auth-logo">
+          <span style={{ border: '2px solid #00e5ff', padding: '2px 4px', borderRadius: '4px', fontSize: '1rem' }}>&#62;_</span>
+          NEXUS-TECH
+        </a>
+      </header>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md"
-      >
-        <div className="glass-card p-8 relative">
-          <div className="text-center mb-8">
-            <div className="inline-flex p-3 bg-white/5 rounded-2xl border border-white/10 mb-4 cursor-pointer hover:bg-white/10 transition-colors" onClick={() => navigate('/')}>
-              <ShieldCheck className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold mb-2">Bem-vindo de volta</h2>
-            <p className="text-zinc-400 text-sm">Acesse sua conta no Nexus Tech</p>
+      {/* Main Content */}
+      <main className="auth-main">
+        <div className="auth-card">
+          <div className="auth-card-icon">
+            <Fingerprint size={28} />
           </div>
+          
+          <h1 className="auth-title">Acesso ao Sistema</h1>
+          <p className="auth-subtitle">Autentique-se para acessar o terminal do marketplace.</p>
 
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="auth-form">
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">E-mail</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-zinc-500" />
-                </div>
+              <div className="auth-field-header">
+                <label className="auth-label">Vetor de Identidade</label>
+              </div>
+              <div className="auth-input-group">
+                <AtSign className="auth-input-icon" size={18} />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
-                  placeholder="seu@email.com"
+                  className="auth-input"
+                  placeholder="user@nexus-tech.com"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-zinc-300 mb-2">Senha</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-zinc-500" />
-                </div>
+              <div className="auth-field-header">
+                <label className="auth-label">Chave de Segurança</label>
+                <a href="#" className="auth-forgot">ESQUECEU A SENHA?</a>
+              </div>
+              <div className="auth-input-group">
+                <Lock className="auth-input-icon" size={18} />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/20 transition-all"
-                  placeholder="••••••••"
+                  className="auth-input"
+                  placeholder="••••••••••••"
+                />
+                <Eye 
+                  className="auth-input-icon-right" 
+                  size={18} 
+                  onClick={() => setShowPassword(!showPassword)}
                 />
               </div>
             </div>
 
-            <button
-              type="submit"
-              className="w-full py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-zinc-200 transition-colors flex justify-center items-center gap-2 group"
-            >
-              Entrar na Plataforma
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <div className="auth-checkbox-group">
+              <input type="checkbox" id="keep-connected" />
+              <label htmlFor="keep-connected" className="auth-checkbox-label">
+                Manter conectado neste terminal
+              </label>
+            </div>
+
+            <button type="submit" className="auth-submit-btn">
+              Inicializar Conexão
             </button>
           </form>
 
-          <p className="mt-8 text-center text-zinc-400 text-sm">
+          <div className="auth-bottom-text">
             Novo por aqui?{' '}
-            <button onClick={() => navigate('/register')} className="text-white hover:underline font-medium">
-              Crie sua conta
+            <button onClick={() => navigate('/register')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} className="auth-link">
+              Criar Credenciais
             </button>
-          </p>
+          </div>
         </div>
-      </motion.div>
+      </main>
+
+      {/* Footer */}
+      <footer className="auth-footer">
+        <div>© 2026 NEXUS-TECH<br/>GLOBAL<br/>VER: 2.0.4-STABLE</div>
+        <div className="auth-footer-links">
+          <span>PROTOCOLO</span>
+          <span>PRIVACIDADE</span>
+          <span>AJUDA</span>
+        </div>
+        <div style={{ width: '100px' }}></div> {/* Spacer for centering links */}
+      </footer>
     </div>
   );
 };

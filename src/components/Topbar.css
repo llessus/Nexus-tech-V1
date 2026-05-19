@@ -1,0 +1,252 @@
+/* src/components/Topbar.css */
+
+.dash-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background-color: #000000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.dash-logo-nav {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.dash-logo {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #00e5ff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dash-nav-links {
+  display: flex;
+  gap: 1.5rem;
+  color: #a1a1aa;
+  font-size: 0.9rem;
+}
+
+.dash-nav-links a {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s;
+}
+
+.dash-nav-links a.active {
+  color: #00e5ff;
+  border-bottom: 2px solid #00e5ff;
+  padding-bottom: 1.1rem;
+}
+
+.dash-nav-links a:hover {
+  color: white;
+}
+
+.dash-search-container {
+  flex: 1;
+  max-width: 400px;
+  margin: 0 2rem;
+  position: relative;
+}
+
+.dash-search-input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.5rem;
+  background-color: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  color: white;
+  font-size: 0.85rem;
+}
+
+.dash-search-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dash-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #52525b;
+}
+
+.dash-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  color: #a1a1aa;
+}
+
+.dash-action-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.dash-action-btn:hover {
+  color: white;
+}
+
+.dash-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 768px) {
+  .hidden-mobile {
+    display: none !important;
+  }
+}
+
+/* Notifications Overlay */
+.notification-dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  width: 8px;
+  height: 8px;
+  background-color: #00e5ff;
+  border-radius: 50%;
+  box-shadow: 0 0 5px #00e5ff;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: 40px;
+  right: -60px;
+  width: 320px;
+  background-color: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.notifications-header {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.notifications-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.notifications-count {
+  background-color: rgba(0, 229, 255, 0.1);
+  color: #00e5ff;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.notifications-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.notification-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.notification-item.unread {
+  background-color: rgba(0, 229, 255, 0.02);
+}
+
+.notification-icon-wrapper {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notification-icon-wrapper.blue {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+}
+
+.notification-icon-wrapper.green {
+  background-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.notification-icon-wrapper.gray {
+  background-color: rgba(161, 161, 170, 0.2);
+  color: #a1a1aa;
+}
+
+.notification-content {
+  flex: 1;
+}
+
+.notification-content p {
+  font-size: 0.85rem;
+  color: #d4d4d8;
+  margin: 0 0 0.25rem 0;
+  line-height: 1.4;
+}
+
+.notification-content p strong {
+  color: white;
+}
+
+.notification-time {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+.notifications-footer {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+  color: #00e5ff;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+.notifications-footer:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}

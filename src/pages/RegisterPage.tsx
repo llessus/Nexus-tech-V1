@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ShieldCheck, Mail, Lock, User, Code, ArrowRight } from 'lucide-react';
+import { User, AtSign, Lock, ShieldCheck, Terminal, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import './Auth.css';
 
 const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -10,8 +10,7 @@ const RegisterPage: React.FC = () => {
     name: '',
     email: '',
     password: '',
-    skills: '',
-    readyServices: false
+    confirmPassword: ''
   });
 
   const handleRegister = (e: React.FormEvent) => {
@@ -21,151 +20,154 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4 relative overflow-hidden text-white py-12">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-zinc-800/20 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-white/5 rounded-full blur-[150px] pointer-events-none" />
+    <div className="auth-container">
+      <div className="auth-bg-glow" />
+      
+      {/* Top Navigation */}
+      <header className="auth-nav">
+        <a href="/" className="auth-logo">
+          NEXUS-TECH
+        </a>
+        <div className="auth-nav-center">
+          <a href="#marketplace">Marketplace</a>
+          <a href="#solucoes">Soluções</a>
+          <a href="#empresa">Empresa</a>
+        </div>
+        <div className="auth-nav-right">
+          <button onClick={() => navigate('/login')} style={{ background: 'none', border: 'none', cursor: 'pointer' }} className="auth-nav-link">
+            Entrar
+          </button>
+          <button className="auth-nav-btn">
+            Cadastrar-se
+          </button>
+        </div>
+      </header>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md z-10"
-      >
-        <div className="glass-card p-8 relative">
-          <div className="text-center mb-8">
-            <div className="inline-flex p-3 bg-white/5 rounded-2xl border border-white/10 mb-4 cursor-pointer hover:bg-white/10 transition-colors" onClick={() => navigate('/')}>
-              <ShieldCheck className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold mb-2">Crie sua Conta</h2>
-            <p className="text-zinc-400 text-sm">Junte-se à elite da tecnologia</p>
-          </div>
+      {/* Main Content */}
+      <main className="auth-main">
+        <div className="auth-card">
+          <h1 className="auth-title" style={{ textAlign: 'left', marginTop: 0 }}>Criar Conta Nexus</h1>
+          <p className="auth-subtitle" style={{ textAlign: 'left', marginBottom: '2rem' }}>
+            Junte-se ao ecossistema de soluções tecnológicas de alta performance.
+          </p>
 
-          <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 mb-8">
-            <button
-              onClick={() => setAccountType('empresa')}
-              type="button"
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                accountType === 'empresa' ? 'bg-white text-black shadow-md' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              Sou Empresa
-            </button>
-            <button
-              onClick={() => setAccountType('talento')}
-              type="button"
-              className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${
-                accountType === 'talento' ? 'bg-white text-black shadow-md' : 'text-zinc-400 hover:text-white'
-              }`}
-            >
-              Sou Talento
-            </button>
-          </div>
-
-          <form onSubmit={handleRegister} className="space-y-5">
+          <form onSubmit={handleRegister} className="auth-form">
             <div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-zinc-500" />
-                </div>
+              <div className="auth-field-header">
+                <label className="auth-label">NOME COMPLETO</label>
+              </div>
+              <div className="auth-input-group">
+                <User className="auth-input-icon" size={18} />
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
-                  placeholder={accountType === 'empresa' ? "Nome da Empresa" : "Nome Completo"}
+                  className="auth-input"
+                  placeholder="Digite seu nome legal"
                 />
               </div>
             </div>
 
             <div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-zinc-500" />
-                </div>
+              <div className="auth-field-header">
+                <label className="auth-label">ENDEREÇO DE E-MAIL</label>
+              </div>
+              <div className="auth-input-group">
+                <AtSign className="auth-input-icon" size={18} />
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
-                  placeholder="Seu melhor e-mail"
+                  className="auth-input"
+                  placeholder="name@company.com"
                 />
               </div>
             </div>
 
             <div>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-zinc-500" />
+              <div className="auth-field-header">
+                <label className="auth-label">TIPO DE CONTA</label>
+              </div>
+              <div className="auth-type-selection">
+                <div 
+                  className={`auth-type-btn ${accountType === 'talento' ? 'active' : ''}`}
+                  onClick={() => setAccountType('talento')}
+                >
+                  <Bot size={24} />
+                  <span className="auth-type-text">Prestador</span>
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
-                  placeholder="Crie uma senha forte"
-                />
+                <div 
+                  className={`auth-type-btn ${accountType === 'empresa' ? 'active' : ''}`}
+                  onClick={() => setAccountType('empresa')}
+                >
+                  <Terminal size={24} />
+                  <span className="auth-type-text">Cliente</span>
+                </div>
               </div>
             </div>
 
-            <AnimatePresence>
-              {accountType === 'talento' && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="pt-2 pb-1 space-y-4">
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Code className="h-5 w-5 text-zinc-500" />
-                      </div>
-                      <input
-                        type="text"
-                        required={accountType === 'talento'}
-                        value={formData.skills}
-                        onChange={(e) => setFormData({...formData, skills: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white placeholder-zinc-500 focus:outline-none focus:border-white/30 transition-all"
-                        placeholder="Principais habilidades (Ex: React, Node)"
-                      />
-                    </div>
-                    
-                    <label className="flex items-start space-x-3 cursor-pointer p-3 bg-white/5 rounded-xl border border-white/10 hover:bg-white/10 transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.readyServices}
-                        onChange={(e) => setFormData({...formData, readyServices: e.target.checked})}
-                        className="mt-1 w-4 h-4 rounded border-gray-300 text-white focus:ring-white bg-transparent outline-none"
-                      />
-                      <div>
-                        <span className="text-sm font-medium text-white block">Quero oferecer serviços prontos</span>
-                        <span className="text-xs text-zinc-400 leading-tight block mt-0.5">Permite que empresas comprem pacotes seus sem burocracia.</span>
-                      </div>
-                    </label>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <div className="auth-row">
+              <div>
+                <div className="auth-field-header">
+                  <label className="auth-label">SENHA</label>
+                </div>
+                <div className="auth-input-group">
+                  <Lock className="auth-input-icon" size={18} />
+                  <input
+                    type="password"
+                    required
+                    value={formData.password}
+                    onChange={(e) => setFormData({...formData, password: e.target.value})}
+                    className="auth-input"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
 
-            <button
-              type="submit"
-              className="w-full py-4 bg-white text-black rounded-xl font-bold text-lg hover:bg-zinc-200 transition-colors flex justify-center items-center gap-2 group mt-4"
-            >
-              Criar Conta Grátis
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <div>
+                <div className="auth-field-header">
+                  <label className="auth-label">CONFIRMAR SENHA</label>
+                </div>
+                <div className="auth-input-group">
+                  <ShieldCheck className="auth-input-icon" size={18} />
+                  <input
+                    type="password"
+                    required
+                    value={formData.confirmPassword}
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
+                    className="auth-input"
+                    placeholder="••••••••"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" className="auth-submit-btn">
+              Inicializar Registro
             </button>
           </form>
 
-          <p className="mt-8 text-center text-zinc-400 text-sm">
-            Já possui conta?{' '}
-            <button onClick={() => navigate('/login')} type="button" className="text-white hover:underline font-medium">
-              Faça login
-            </button>
+          <p className="auth-protocol-text">
+            Ao se registrar, você concorda com os <a href="#">Termos do Nexus</a> e a <a href="#">Política de Segurança</a>.
           </p>
         </div>
-      </motion.div>
+      </main>
+
+      {/* Footer */}
+      <footer className="auth-footer">
+        <div>© 2026 NEXUS-TECH</div>
+        <div className="status-indicator">
+          <div className="status-dot"></div>
+          <span>STATUS DO SISTEMA: ONLINE</span>
+        </div>
+        <div className="auth-footer-links">
+          <span>DOCUMENTAÇÃO</span>
+          <span>PRIVACIDADE</span>
+          <span>SUPORTE</span>
+        </div>
+      </footer>
     </div>
   );
 };

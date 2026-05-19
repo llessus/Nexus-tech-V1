@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { Menu, X, Rocket, ChevronRight } from 'lucide-react';
+import './Navbar.css';
 
 const navLinks = [
   { name: 'Home', href: '#' },
@@ -48,26 +49,26 @@ const Navbar: React.FC = () => {
         paddingTop: paddingY,
         paddingBottom: paddingY,
       }}
-      className="fixed top-0 left-0 right-0 z-50 transition-colors duration-300"
+      className="navbar"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center">
+      <div className="navbar-container">
+        <div className="navbar-content">
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center space-x-2 group cursor-pointer"
+            className="navbar-brand"
           >
-            <div className="p-2 bg-white rounded-lg group-hover:rotate-12 transition-transform duration-300">
-              <Rocket className="w-6 h-6 text-black" />
+            <div className="navbar-logo-icon">
+              <Rocket size={24} color="black" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-white to-zinc-500 bg-clip-text text-transparent">
+            <span className="navbar-logo-text">
               Nexus Tech
             </span>
           </motion.div>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="navbar-desktop">
             {navLinks.map((link, index) => (
               <motion.a
                 key={link.name}
@@ -75,10 +76,9 @@ const Navbar: React.FC = () => {
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                className="text-gray-300 hover:text-white transition-colors relative group"
+                className="navbar-link"
               >
                 {link.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-white transition-all group-hover:w-full" />
               </motion.a>
             ))}
             <motion.button
@@ -86,18 +86,18 @@ const Navbar: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="px-6 py-2 bg-white hover:bg-zinc-200 text-black rounded-full font-bold transition-all flex items-center gap-2 group"
+              className="navbar-btn"
             >
               Começar Agora
-              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="icon" size={16} />
             </motion.button>
           </div>
 
           {/* Mobile Button */}
-          <div className="md:hidden">
+          <div className="navbar-mobile-btn-container">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-white p-2"
+              className="navbar-mobile-btn"
             >
               {isOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -112,9 +112,9 @@ const Navbar: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-black/90 backdrop-blur-xl border-b border-white/10"
+            className="navbar-mobile-menu"
           >
-            <div className="px-4 pt-2 pb-6 space-y-1">
+            <div className="navbar-mobile-content">
               {navLinks.map((link, index) => (
                 <motion.a
                   key={link.name}
@@ -122,14 +122,14 @@ const Navbar: React.FC = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="block px-3 py-4 text-lg font-medium text-gray-300 hover:text-white border-b border-white/5"
+                  className="navbar-mobile-link"
                   onClick={() => setIsOpen(false)}
                 >
                   {link.name}
                 </motion.a>
               ))}
-              <div className="pt-4">
-                <button className="w-full py-4 bg-white text-black rounded-xl font-bold">
+              <div style={{ paddingTop: '1rem' }}>
+                <button className="navbar-mobile-btn-full">
                   Começar Agora
                 </button>
               </div>

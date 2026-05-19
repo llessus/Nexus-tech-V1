@@ -1,0 +1,377 @@
+/* src/pages/HireTalentPage.css */
+
+.hire-container {
+  min-height: 100vh;
+  background-color: #050505;
+  color: white;
+  font-family: 'Inter', sans-serif;
+  padding-bottom: 4rem;
+}
+
+.hire-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header Section */
+.hire-breadcrumb {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 1rem;
+}
+
+.hire-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 3rem;
+}
+
+.hire-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin: 0 0 1rem 0;
+}
+
+.hire-badges {
+  display: flex;
+  gap: 1rem;
+}
+
+.hire-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #a1a1aa;
+}
+
+.hire-badge.verified {
+  background-color: rgba(0, 229, 255, 0.1);
+  color: #00e5ff;
+  border-color: rgba(0, 229, 255, 0.2);
+}
+
+.hire-price-block {
+  text-align: right;
+}
+
+.hire-price-label {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.25rem;
+}
+
+.hire-price-value {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #00e5ff;
+}
+
+.hire-price-unit {
+  font-size: 1rem;
+  color: #71717a;
+  font-weight: 500;
+}
+
+/* Two Column Layout */
+.hire-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 2rem;
+}
+
+/* Left Column: Reviews */
+.hire-card {
+  background-color: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  padding: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+.hire-section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.hire-rating-overview {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+}
+
+.hire-rating-big {
+  text-align: center;
+}
+
+.hire-rating-number {
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.hire-rating-stars {
+  display: flex;
+  color: #00e5ff;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 0.5rem;
+}
+
+.hire-rating-count {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.hire-rating-bars {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hire-rating-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #a1a1aa;
+}
+
+.hire-rating-bar-bg {
+  flex: 1;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hire-rating-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background-color: #00e5ff;
+  border-radius: 2px;
+}
+
+.hire-review-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.hire-review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.hire-review-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hire-review-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+}
+
+.hire-review-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.hire-review-role {
+  font-size: 0.75rem;
+  color: #71717a;
+}
+
+.hire-review-date {
+  font-size: 0.75rem;
+  color: #52525b;
+}
+
+.hire-review-stars {
+  display: flex;
+  color: #00e5ff;
+  gap: 2px;
+  margin-bottom: 0.75rem;
+}
+
+.hire-review-text {
+  font-size: 0.9rem;
+  color: #d4d4d8;
+  line-height: 1.6;
+}
+
+.hire-btn-ghost {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+.hire-btn-ghost:hover {
+  color: white;
+}
+
+/* Right Column: Checkout */
+.hire-checkout-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.hire-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #71717a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.hire-dates-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.hire-dates-scroll::-webkit-scrollbar {
+  height: 2px;
+}
+.hire-dates-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hire-date-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: #a1a1aa;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 48px;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.hire-date-btn:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+}
+
+.hire-date-btn.active {
+  border-color: #00e5ff;
+  color: #00e5ff;
+  background-color: rgba(0, 229, 255, 0.05);
+}
+
+.hire-select {
+  width: 100%;
+  background-color: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.9rem;
+  margin-bottom: 2rem;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+}
+
+.hire-cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #a1a1aa;
+  margin-bottom: 0.75rem;
+}
+
+.hire-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 2rem;
+}
+
+.hire-total-value {
+  font-size: 1.25rem;
+  color: #00e5ff;
+}
+
+.hire-secure-text {
+  font-size: 0.65rem;
+  color: #52525b;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.hire-guarantee-card {
+  background-color: #050505;
+  border: 1px solid rgba(0, 229, 255, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.hire-guarantee-icon {
+  color: #00e5ff;
+}
+
+.hire-guarantee-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 0.25rem;
+}
+
+.hire-guarantee-desc {
+  font-size: 0.75rem;
+  color: #71717a;
+  line-height: 1.4;
+}
