@@ -1,20 +1,65 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   MapPin, 
   Globe, 
   CheckCircle,
-  Star,
-  Search,
-  Bell,
-  Settings
+  Star
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Topbar from '../components/Topbar';
+import { obterTalentoPorId, Talento } from '../api/talentos';
 import './TalentProfilePage.css';
 import './DashboardPage.css'; // Reusing topbar styles
 
 const TalentProfilePage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [talent, setTalent] = useState<Talento | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) return;
+    obterTalentoPorId(Number(id))
+      .then(data => {
+        setTalent(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Erro ao buscar talento:', err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="profile-container">
+        <Topbar />
+        <main className="profile-main" style={{ textAlign: 'center', padding: '5rem', color: '#a1a1aa' }}>
+          Carregando informações do talento...
+        </main>
+      </div>
+    );
+  }
+
+  if (!talent) {
+    return (
+      <div className="profile-container">
+        <Topbar />
+        <main className="profile-main" style={{ textAlign: 'center', padding: '5rem', color: '#a1a1aa' }}>
+          <h2>Talento não encontrado</h2>
+          <button className="btn-cyan" onClick={() => navigate('/dashboard')} style={{ marginTop: '1.5rem', width: 'auto', display: 'inline-flex' }}>
+            Voltar ao Marketplace
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  // Simular notas consistentes por ID
+  const rating = 4.8 + (talent.id % 3) * 0.1;
+  const location = talent.id % 2 === 0 ? "Remoto" : "São Paulo";
+  const numReviews = 45 + (talent.id * 13) % 80;
+  const numCompletedProjects = 15 + (talent.id * 17) % 50;
 
   return (
     <div className="profile-container">
@@ -26,8 +71,8 @@ const TalentProfilePage: React.FC = () => {
           <div className="profile-header-left">
             <div className="profile-avatar-wrapper">
               <img 
-                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop" 
-                alt="Sabrina Carpinteira" 
+                src={talent.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=300&auto=format&fit=crop"} 
+                alt={talent.nome} 
                 className="profile-avatar"
               />
               <div className="profile-verified-badge">
@@ -36,24 +81,29 @@ const TalentProfilePage: React.FC = () => {
             </div>
             
             <div className="profile-info">
-              <h1>Sabrina<br/>Carpinteira</h1>
+              <h1>{talent.nome}</h1>
               <div className="profile-level-tag">NÍVEL ESPECIALISTA</div>
-              <div className="profile-role">Product Designer Senior</div>
+              <div className="profile-role">{talent.role}</div>
               
               <div className="profile-meta">
                 <div className="profile-meta-item">
-                  <MapPin size={16} /> São Paulo, Brasil
+                  <MapPin size={16} /> {location}
                 </div>
                 <div className="profile-meta-item">
-                  <Globe size={16} /> Português, Inglês, Espanhol
+                  <Globe size={16} /> Português, Inglês
                 </div>
               </div>
             </div>
           </div>
 
           <div className="profile-actions">
-            <button className="btn-outline">Enviar Mensagem</button>
-            <button className="btn-cyan" onClick={() => navigate('/hire/1')}>Contratar Talento</button>
+            <button 
+              className="btn-outline"
+              onClick={() => navigate(`/chat?talentoId=${talent.id}`)}
+            >
+              Enviar Mensagem
+            </button>
+            <button className="btn-cyan" onClick={() => navigate(`/hire/${talent.id}`)}>Contratar Talento</button>
           </div>
         </div>
 
@@ -62,29 +112,36 @@ const TalentProfilePage: React.FC = () => {
           <div className="profile-stat-card">
             <div className="profile-stat-label">AVALIAÇÃO DOS CLIENTES</div>
             <div className="profile-stat-value">
-              5.0
+              {rating.toFixed(1)}
               <div className="profile-stars">
-                {[1, 2, 3, 4, 5].map(i => <Star key={i} size={20} fill="currentColor" />)}
+                {[1, 2, 3, 4, 5].map(i => (
+                  <Star 
+                    key={i} 
+                    size={20} 
+                    fill={i <= Math.round(rating) ? "currentColor" : "none"} 
+                    color={i <= Math.round(rating) ? "currentColor" : "#52525b"} 
+                  />
+                ))}
               </div>
             </div>
-            <div className="profile-stat-sub">(124 avaliações)</div>
+            <div className="profile-stat-sub">({numReviews} avaliações)</div>
           </div>
           
           <div className="profile-stat-card">
             <div className="profile-stat-label">PROJETOS CONCLUÍDOS</div>
-            <div className="profile-stat-value">184</div>
-            <div className="profile-stat-sub highlight">+12 este mês</div>
+            <div className="profile-stat-value">{numCompletedProjects}</div>
+            <div className="profile-stat-sub highlight">+3 este mês</div>
           </div>
 
           <div className="profile-stat-card">
             <div className="profile-stat-label">TEMPO DE RESPOSTA</div>
             <div className="profile-stat-value">&lt; 2h</div>
-            <div className="profile-stat-sub">Top 5% in Nexus-Tech</div>
+            <div className="profile-stat-sub">Top 5% no Nexus-Tech</div>
           </div>
 
           <div className="profile-stat-card">
             <div className="profile-stat-label">TAXA DE RETENÇÃO</div>
-            <div className="profile-stat-value">94%</div>
+            <div className="profile-stat-value">96%</div>
             <div className="profile-stat-sub">Parcerias de longo prazo</div>
           </div>
         </div>
@@ -95,9 +152,7 @@ const TalentProfilePage: React.FC = () => {
           <div>
             <div className="profile-section-title">Sobre Mim</div>
             <div className="profile-about-text">
-              <p>Estrategista de design com mais de 10 anos de experiência transformando visões complexas em interfaces intuitivas e memoráveis. Minha abordagem combina rigor analítico com estética editorial, focada em produtos que não apenas funcionam, mas encantam e geram valor de negócio real.</p>
-              <br/>
-              <p>Especializada em Ecossistemas Digitais de Alta Performance, Design Systems escaláveis e UX para Fintechs e plataformas SaaS complexas. Já colaborei com gigantes da tecnologia e startups unicórnio para redefinir suas linguagens visuais.</p>
+              <p>{talent.bio || `Olá! Sou ${talent.nome}, especialista na área de ${talent.role}. Foco em trazer soluções com alta performance e agilidade para acelerar produtos digitais.`}</p>
             </div>
 
             <div className="profile-portfolio-header">
@@ -123,28 +178,22 @@ const TalentProfilePage: React.FC = () => {
             <div className="profile-sidebar-card">
               <div className="profile-sidebar-title">Habilidades</div>
               <div className="profile-skills-tags">
-                <span className="profile-skill-tag">UI/UX Design</span>
-                <span className="profile-skill-tag">Design Systems</span>
-                <span className="profile-skill-tag">Product Strategy</span>
-                <span className="profile-skill-tag">Figma Expert</span>
-                <span className="profile-skill-tag">Prototyping</span>
-                <span className="profile-skill-tag">User Research</span>
-                <span className="profile-skill-tag">Webflow</span>
-                <span className="profile-skill-tag">Interaction Design</span>
-                <span className="profile-skill-tag">Visual Branding</span>
+                {talent.skills.map(skill => (
+                  <span key={skill} className="profile-skill-tag">{skill}</span>
+                ))}
               </div>
 
               <div className="profile-info-row">
                 <span className="profile-info-label">Valor Hora</span>
-                <span className="profile-info-value">$85 - $120</span>
+                <span className="profile-info-value">R$ {talent.hourlyRate}/h</span>
               </div>
               <div className="profile-info-row">
                 <span className="profile-info-label">Disponibilidade</span>
-                <span className="profile-info-value">20h / semana</span>
+                <span className="profile-info-value">30h / semana</span>
               </div>
               <div className="profile-info-row" style={{marginBottom: 0}}>
                 <span className="profile-info-label">Último Login</span>
-                <span className="profile-info-value">Ativa agora</span>
+                <span className="profile-info-value">Ativo agora</span>
               </div>
             </div>
 
@@ -152,14 +201,14 @@ const TalentProfilePage: React.FC = () => {
               <div className="profile-sidebar-title">Formação Acadêmica</div>
               <div className="profile-timeline">
                 <div className="profile-timeline-item">
-                  <div className="profile-timeline-title">Master in Digital Design</div>
-                  <div className="profile-timeline-subtitle">School of Visual Arts, NY</div>
-                  <div className="profile-timeline-date">2014 - 2016</div>
+                  <div className="profile-timeline-title">Especialização Avançada</div>
+                  <div className="profile-timeline-subtitle">Nexus Academy</div>
+                  <div className="profile-timeline-date">2022 - 2023</div>
                 </div>
                 <div className="profile-timeline-item" style={{marginBottom: 0}}>
-                  <div className="profile-timeline-title">B.A. Graphic Design</div>
-                  <div className="profile-timeline-subtitle">Universidade de São Paulo</div>
-                  <div className="profile-timeline-date">2009 - 2013</div>
+                  <div className="profile-timeline-title">Tecnologia da Informação</div>
+                  <div className="profile-timeline-subtitle">Universidade Parceira</div>
+                  <div className="profile-timeline-date">2018 - 2021</div>
                 </div>
               </div>
             </div>
@@ -173,7 +222,7 @@ const TalentProfilePage: React.FC = () => {
                 </div>
               </div>
               <div className="profile-test-quote">
-                "Sabrina tem uma visão rara. Ela não apenas desenhou nossa plataforma, ela ajudou a estruturar como nossos usuários pensam. Resultados imediatos após o lançamento."
+                "{talent.nome.split(' ')[0]} superou as expectativas do nosso time de produto. Entrega profissional extremamente no prazo e com maestria técnica."
               </div>
             </div>
           </div>

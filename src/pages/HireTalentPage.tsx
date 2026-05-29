@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   CheckCircle,
   Clock,
@@ -9,12 +9,20 @@ import {
   Building,
   Check
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Topbar from '../components/Topbar';
+import { obterTalentoPorId, Talento } from '../api/talentos';
+import { getUsuarioLogado } from '../api/auth';
+import { criarContratacao } from '../api/contratacoes';
 import './HireTalentPage.css';
 
 const HireTalentPage: React.FC = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const [talent, setTalent] = useState<Talento | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const [hours, setHours] = useState(5);
   const [selectedDate, setSelectedDate] = useState('22');
   const [paymentMethod, setPaymentMethod] = useState<'cartao' | 'pix' | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -22,18 +30,80 @@ const HireTalentPage: React.FC = () => {
 
   const dates = ['20', '21', '22', '23', '24', '25', '26'];
 
-  const handleConfirm = () => {
+  useEffect(() => {
+    if (!id) return;
+    obterTalentoPorId(Number(id))
+      .then(data => {
+        setTalent(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Erro ao buscar talento:', err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  const handleConfirm = async () => {
     if (!paymentMethod) {
       alert("Por favor, selecione uma forma de pagamento.");
       return;
     }
     
+    const usuario = getUsuarioLogado();
+    if (!usuario) {
+      alert("Você precisa estar logado para contratar.");
+      navigate('/login');
+      return;
+    }
+
     setIsProcessing(true);
-    // Simulate processing
-    setTimeout(() => {
+    try {
+      await criarContratacao(usuario.id, talent.id, hours, totalCost);
       setIsProcessing(false);
       setShowConfirmModal(true);
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao registrar a contratação no banco de dados.");
+      setIsProcessing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="hire-container">
+        <Topbar />
+        <main className="hire-main" style={{ textAlign: 'center', padding: '5rem', color: '#a1a1aa' }}>
+          Carregando informações para contratação...
+        </main>
+      </div>
+    );
+  }
+
+  if (!talent) {
+    return (
+      <div className="hire-container">
+        <Topbar />
+        <main className="hire-main" style={{ textAlign: 'center', padding: '5rem', color: '#a1a1aa' }}>
+          <h2>Talento não encontrado</h2>
+          <button className="btn-cyan" onClick={() => navigate('/dashboard')} style={{ marginTop: '1.5rem', width: 'auto', display: 'inline-flex' }}>
+            Voltar ao Marketplace
+          </button>
+        </main>
+      </div>
+    );
+  }
+
+  // Simular notas consistentes por ID
+  const rating = 4.8 + (talent.id % 3) * 0.1;
+  const numReviews = 45 + (talent.id * 13) % 80;
+  
+  // Dynamic Pricing Calculation
+  const hourlyCost = hours * talent.hourlyRate;
+  const platformFee = hourlyCost * 0.05;
+  const totalCost = hourlyCost + platformFee;
+
+  const formatCurrency = (val: number) => {
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   };
 
   return (
@@ -42,12 +112,12 @@ const HireTalentPage: React.FC = () => {
 
       <main className="hire-main">
         <div className="hire-breadcrumb">
-          MARKETPLACE / UX CONSULTING
+          MARKETPLACE / {talent.role.toUpperCase()}
         </div>
 
         <div className="hire-header-row">
           <div>
-            <h1 className="hire-title">Consultoria em UX Design</h1>
+            <h1 className="hire-title">Contratação de {talent.nome}</h1>
             <div className="hire-badges">
               <div className="hire-badge verified">
                 <CheckCircle size={14} />
@@ -61,7 +131,7 @@ const HireTalentPage: React.FC = () => {
           </div>
           <div className="hire-price-block">
             <div className="hire-price-label">INVESTIMENTO</div>
-            <div className="hire-price-value">R$ 180<span className="hire-price-unit">/hora</span></div>
+            <div className="hire-price-value">R$ {talent.hourlyRate}<span className="hire-price-unit">/hora</span></div>
           </div>
         </div>
 
@@ -73,11 +143,18 @@ const HireTalentPage: React.FC = () => {
               
               <div className="hire-rating-overview">
                 <div className="hire-rating-big">
-                  <div className="hire-rating-number">4.9</div>
+                  <div className="hire-rating-number">{rating.toFixed(1)}</div>
                   <div className="hire-rating-stars">
-                    {[1, 2, 3, 4, 5].map(i => <Star key={i} size={16} fill="currentColor" />)}
+                    {[1, 2, 3, 4, 5].map(i => (
+                      <Star 
+                        key={i} 
+                        size={16} 
+                        fill={i <= Math.round(rating) ? "currentColor" : "none"} 
+                        color={i <= Math.round(rating) ? "currentColor" : "#52525b"} 
+                      />
+                    ))}
                   </div>
-                  <div className="hire-rating-count">124 depoimentos</div>
+                  <div className="hire-rating-count">{numReviews} depoimentos</div>
                 </div>
 
                 <div className="hire-rating-bars">
@@ -127,7 +204,7 @@ const HireTalentPage: React.FC = () => {
                   {[1, 2, 3, 4, 5].map(i => <Star key={i} size={12} fill="currentColor" />)}
                 </div>
                 <div className="hire-review-text">
-                  "Superou todas as expectativas. A consultoria não apenas focou na interface, mas trouxe insights profundos sobre a jornada do usuário que mudaram nossa taxa de conversão em 15% logo na primeira semana."
+                  "Superou todas as expectativas. O profissional não apenas foca na entrega rápida, mas traz insights profundos que mudaram nosso projeto logo na primeira semana de pareamento."
                 </div>
 
                 {/* Review 2 */}
@@ -147,13 +224,13 @@ const HireTalentPage: React.FC = () => {
                     <Star size={12} color="#52525b" />
                   </div>
                   <div className="hire-review-text">
-                    "Entrega rápida e documentação de UX extremamente técnica e detalhada. Ótima comunicação, mas senti que poderíamos ter explorado mais o design system no final."
+                    "Entrega muito ágil e documentação extremamente técnica e detalhada. Ótima comunicação de ponta a ponta durante o escopo."
                   </div>
                 </div>
               </div>
               
               <button className="hire-btn-ghost" style={{borderTop: '1px solid rgba(255, 255, 255, 0.05)'}}>
-                VER MAIS 122 COMENTÁRIOS
+                VER MAIS COMENTÁRIOS
               </button>
             </div>
           </div>
@@ -180,10 +257,14 @@ const HireTalentPage: React.FC = () => {
               </div>
 
               <label className="hire-label">CARGA HORÁRIA</label>
-              <select className="hire-select">
-                <option>5 horas (Imersão em UX)</option>
-                <option>10 horas (Design Sprint)</option>
-                <option>20 horas (Projeto Completo)</option>
+              <select 
+                className="hire-select"
+                value={hours}
+                onChange={(e) => setHours(Number(e.target.value))}
+              >
+                <option value={5}>5 horas (Aceleração e Imersão)</option>
+                <option value={10}>10 horas (Sprint Técnica)</option>
+                <option value={20}>20 horas (Projeto Completo)</option>
               </select>
 
               {/* Payment Method Section */}
@@ -218,17 +299,17 @@ const HireTalentPage: React.FC = () => {
               </div>
 
               <div className="hire-cost-row">
-                <span>Taxa Horária (5h)</span>
-                <span>R$ 900,00</span>
+                <span>Taxa Horária ({hours}h)</span>
+                <span>{formatCurrency(hourlyCost)}</span>
               </div>
               <div className="hire-cost-row">
                 <span>Plataforma Nexus (5%)</span>
-                <span>R$ 45,00</span>
+                <span>{formatCurrency(platformFee)}</span>
               </div>
 
               <div className="hire-total-row">
                 <span>Total Estimado</span>
-                <span className="hire-total-value">R$ 945,00</span>
+                <span className="hire-total-value">{formatCurrency(totalCost)}</span>
               </div>
 
               <button 
@@ -280,12 +361,12 @@ const HireTalentPage: React.FC = () => {
             </h2>
             
             <p style={{ color: '#a1a1aa', fontSize: '0.9rem', lineHeight: 1.5, marginBottom: '2rem' }}>
-              O contrato com o profissional foi gerado com sucesso. Agora você pode alinhar os próximos passos diretamente na sua caixa de mensagens.
+              O contrato com o profissional {talent.nome} foi gerado com sucesso. Agora você pode alinhar os próximos passos diretamente na sua caixa de mensagens.
             </p>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
               <button 
-                onClick={() => navigate('/chat')}
+                onClick={() => navigate(`/chat?talentoId=${talent.id}`)}
                 style={{
                   backgroundColor: '#00e5ff', color: 'black', border: 'none', borderRadius: '0.5rem',
                   padding: '1rem', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer'

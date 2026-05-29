@@ -10,6 +10,7 @@ export const criarProdutoDto = z.object({
     invalid_type_error: 'O preço deve ser um número.',
   }).positive('O preço deve ser maior que zero.'),
   descricao: z.string().optional(),
+  imagemUrl: z.string().url('A URL da imagem deve ser válida.').optional(),
 });
 
 export const atualizarProdutoDto = criarProdutoDto.partial();

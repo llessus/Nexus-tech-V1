@@ -1,19 +1,20 @@
 import { Request, Response } from 'express';
 import { criarTalentoDto, atualizarTalentoDto } from '../dtos/talento.dto';
+import * as talentoRepository from '../repositories/talento.repository';
 
-// Simulação de banco de dados
-let talentos: any[] = [];
-let nextId = 1;
+const erroInterno = (res: Response, erro: unknown) => {
+  console.error(erro);
+  res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+};
 
-export const listar = (req: Request, res: Response) => {
-  const { nome } = req.query;
-  let resultado = talentos;
-
-  if (nome && typeof nome === 'string') {
-    resultado = resultado.filter(t => t.nome.toLowerCase().includes(nome.toLowerCase()));
+export const listar = (req: Request, res: Response): void => {
+  try {
+    const { nome } = req.query;
+    const talentos = talentoRepository.listarTalentos(typeof nome === 'string' ? nome : undefined);
+    res.json(talentos);
+  } catch (erro) {
+    erroInterno(res, erro);
   }
-
-  res.json(resultado);
 };
 
 export const obterPorId = (req: Request, res: Response): void => {
@@ -24,13 +25,17 @@ export const obterPorId = (req: Request, res: Response): void => {
     return;
   }
 
-  const talento = talentos.find(t => t.id === id);
-  if (!talento) {
-    res.status(404).json({ erro: 'Talento não encontrado.' });
-    return;
-  }
+  try {
+    const talento = talentoRepository.obterTalentoPorId(id);
+    if (!talento) {
+      res.status(404).json({ erro: 'Talento não encontrado.' });
+      return;
+    }
 
-  res.json(talento);
+    res.json(talento);
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };
 
 export const criar = (req: Request, res: Response): void => {
@@ -41,10 +46,17 @@ export const criar = (req: Request, res: Response): void => {
     return;
   }
 
-  const novoTalento = { id: nextId++, ...validacao.data };
-  talentos.push(novoTalento);
+  try {
+    const novoTalento = talentoRepository.criarTalento(validacao.data);
+    res.status(201).json(novoTalento);
+  } catch (erro: any) {
+    if (erro?.message?.includes('UNIQUE constraint failed')) {
+      res.status(409).json({ erro: 'Já existe um talento cadastrado com este e-mail.' });
+      return;
+    }
 
-  res.status(201).json(novoTalento);
+    erroInterno(res, erro);
+  }
 };
 
 export const substituir = (req: Request, res: Response): void => {
@@ -62,14 +74,22 @@ export const substituir = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = talentos.findIndex(t => t.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Talento não encontrado.' });
-    return;
-  }
+  try {
+    const talento = talentoRepository.substituirTalento(id, validacao.data);
+    if (!talento) {
+      res.status(404).json({ erro: 'Talento não encontrado.' });
+      return;
+    }
 
-  talentos[index] = { id, ...validacao.data };
-  res.json(talentos[index]);
+    res.json(talento);
+  } catch (erro: any) {
+    if (erro?.message?.includes('UNIQUE constraint failed')) {
+      res.status(409).json({ erro: 'Já existe um talento cadastrado com este e-mail.' });
+      return;
+    }
+
+    erroInterno(res, erro);
+  }
 };
 
 export const atualizar = (req: Request, res: Response): void => {
@@ -87,14 +107,22 @@ export const atualizar = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = talentos.findIndex(t => t.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Talento não encontrado.' });
-    return;
-  }
+  try {
+    const talento = talentoRepository.atualizarTalento(id, validacao.data);
+    if (!talento) {
+      res.status(404).json({ erro: 'Talento não encontrado.' });
+      return;
+    }
 
-  talentos[index] = { ...talentos[index], ...validacao.data };
-  res.json(talentos[index]);
+    res.json(talento);
+  } catch (erro: any) {
+    if (erro?.message?.includes('UNIQUE constraint failed')) {
+      res.status(409).json({ erro: 'Já existe um talento cadastrado com este e-mail.' });
+      return;
+    }
+
+    erroInterno(res, erro);
+  }
 };
 
 export const remover = (req: Request, res: Response): void => {
@@ -105,12 +133,15 @@ export const remover = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = talentos.findIndex(t => t.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Talento não encontrado.' });
-    return;
-  }
+  try {
+    const removido = talentoRepository.removerTalento(id);
+    if (!removido) {
+      res.status(404).json({ erro: 'Talento não encontrado.' });
+      return;
+    }
 
-  talentos.splice(index, 1);
-  res.status(204).send();
+    res.status(204).send();
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };

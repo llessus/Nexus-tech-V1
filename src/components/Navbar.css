@@ -29,8 +29,27 @@
 
 .navbar-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 1rem;
+}
+
+.navbar-back-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  color: #d1d5db;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s ease;
+}
+
+.navbar-back-btn:hover {
+  border-color: rgba(255, 255, 255, 0.35);
+  color: white;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 /* Logo */
@@ -66,6 +85,7 @@
   display: none;
   align-items: center;
   gap: 2rem;
+  margin-left: auto;
 }
 
 @media (min-width: 768px) {
@@ -129,6 +149,7 @@
 /* Mobile Button */
 .navbar-mobile-btn-container {
   display: block;
+  margin-left: auto;
 }
 
 @media (min-width: 768px) {

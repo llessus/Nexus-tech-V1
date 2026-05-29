@@ -9,7 +9,9 @@ import ProviderDashboardPage from './pages/ProviderDashboardPage';
 import TalentProfilePage from './pages/TalentProfilePage';
 import HireTalentPage from './pages/HireTalentPage';
 import SettingsPage from './pages/SettingsPage';
+import ChatPage from './pages/ChatPage';
 import { ProdutosDemo } from './components/ProdutosDemo';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App: React.FC = () => {
   return (
@@ -18,12 +20,64 @@ const App: React.FC = () => {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        <Route path="/admin" element={<AdminPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/provider" element={<ProviderDashboardPage />} />
-        <Route path="/talent/:id" element={<TalentProfilePage />} />
-        <Route path="/hire/:id" element={<HireTalentPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
+        
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute allowedRoles={['cliente', 'admin']}>
+              <DashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/provider" 
+          element={
+            <ProtectedRoute allowedRoles={['prestador', 'admin']}>
+              <ProviderDashboardPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/talent/:id" 
+          element={
+            <ProtectedRoute>
+              <TalentProfilePage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/hire/:id" 
+          element={
+            <ProtectedRoute allowedRoles={['cliente', 'admin']}>
+              <HireTalentPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/chat" 
+          element={
+            <ProtectedRoute>
+              <ChatPage />
+            </ProtectedRoute>
+          } 
+        />
+        
         <Route path="/demo" element={<ProdutosDemo />} />
       </Routes>
     </BrowserRouter>

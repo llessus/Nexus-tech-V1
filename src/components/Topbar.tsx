@@ -1,15 +1,38 @@
 import React, { useState } from 'react';
-import { Search, Bell, Settings, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Search, Bell, Settings, MessageSquare } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getUsuarioLogado } from '../api/auth';
 import './Topbar.css';
 
-const Topbar: React.FC = () => {
+interface TopbarProps {
+  onShowContratacoes?: () => void;
+}
+
+const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
+  const usuario = getUsuarioLogado();
+  const initials = usuario?.nome
+    ? usuario.nome
+        .split(' ')
+        .slice(0, 2)
+        .map((p) => p[0])
+        .join('')
+        .toUpperCase()
+    : '';
 
   return (
     <header className="dash-topbar">
       <div className="dash-logo-nav">
+        <button
+          type="button"
+          className="dash-back-btn"
+          onClick={() => navigate(-1)}
+          aria-label="Voltar para a página anterior"
+          title="Voltar"
+        >
+          <ArrowLeft size={18} />
+        </button>
         <div className="dash-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
           Nexus-Tech
         </div>
@@ -31,9 +54,19 @@ const Topbar: React.FC = () => {
       </div>
 
       <div className="dash-actions">
-        <button className="auth-submit-btn hidden-mobile" style={{ padding: '0.5rem 1rem', marginTop: 0, width: 'auto' }}>
-          Publicar Projeto
-        </button>
+        {usuario?.tipoConta === 'cliente' ? (
+          <button 
+            className="auth-submit-btn hidden-mobile" 
+            style={{ padding: '0.5rem 1rem', marginTop: 0, width: 'auto' }}
+            onClick={onShowContratacoes}
+          >
+            Serviços Contratados
+          </button>
+        ) : (
+          <button className="auth-submit-btn hidden-mobile" style={{ padding: '0.5rem 1rem', marginTop: 0, width: 'auto' }}>
+            Publicar Projeto
+          </button>
+        )}
         
         <div style={{ position: 'relative' }}>
           <button 
@@ -88,13 +121,23 @@ const Topbar: React.FC = () => {
         </div>
 
         <button className="dash-action-btn" onClick={() => navigate('/settings')}><Settings size={20} /></button>
-        <img 
-          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop" 
-          alt="User Avatar" 
-          className="dash-avatar" 
-          onClick={() => navigate('/settings')}
-          style={{ cursor: 'pointer' }}
-        />
+        {usuario ? (
+          <div 
+            className="dash-avatar-iniciais" 
+            onClick={() => navigate('/settings')}
+            style={{ cursor: 'pointer' }}
+          >
+            {initials}
+          </div>
+        ) : (
+          <img 
+            src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop" 
+            alt="User Avatar" 
+            className="dash-avatar" 
+            onClick={() => navigate('/settings')}
+            style={{ cursor: 'pointer' }}
+          />
+        )}
       </div>
     </header>
   );

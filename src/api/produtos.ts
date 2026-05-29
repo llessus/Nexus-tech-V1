@@ -8,6 +8,7 @@ export interface Produto {
   nome: string;
   preco: number;
   descricao?: string;
+  imagemUrl?: string;
 }
 
 // GET: Operação de leitura, sem body, idempotente

@@ -1,19 +1,20 @@
 import { Request, Response } from 'express';
 import { criarProdutoDto, atualizarProdutoDto } from '../dtos/produto.dto';
+import * as produtoRepository from '../repositories/produto.repository';
 
-// Simulação de banco de dados
-let produtos: any[] = [];
-let nextId = 1;
+const erroInterno = (res: Response, erro: unknown) => {
+  console.error(erro);
+  res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+};
 
-export const listar = (req: Request, res: Response) => {
-  const { nome } = req.query;
-  let resultado = produtos;
-
-  if (nome && typeof nome === 'string') {
-    resultado = resultado.filter(p => p.nome.toLowerCase().includes(nome.toLowerCase()));
+export const listar = (req: Request, res: Response): void => {
+  try {
+    const { nome } = req.query;
+    const produtos = produtoRepository.listarProdutos(typeof nome === 'string' ? nome : undefined);
+    res.json(produtos);
+  } catch (erro) {
+    erroInterno(res, erro);
   }
-
-  res.json(resultado);
 };
 
 export const obterPorId = (req: Request, res: Response): void => {
@@ -24,13 +25,17 @@ export const obterPorId = (req: Request, res: Response): void => {
     return;
   }
 
-  const produto = produtos.find(p => p.id === id);
-  if (!produto) {
-    res.status(404).json({ erro: 'Produto não encontrado.' });
-    return;
-  }
+  try {
+    const produto = produtoRepository.obterProdutoPorId(id);
+    if (!produto) {
+      res.status(404).json({ erro: 'Produto não encontrado.' });
+      return;
+    }
 
-  res.json(produto);
+    res.json(produto);
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };
 
 export const criar = (req: Request, res: Response): void => {
@@ -41,10 +46,12 @@ export const criar = (req: Request, res: Response): void => {
     return;
   }
 
-  const novoProduto = { id: nextId++, ...validacao.data };
-  produtos.push(novoProduto);
-
-  res.status(201).json(novoProduto);
+  try {
+    const novoProduto = produtoRepository.criarProduto(validacao.data);
+    res.status(201).json(novoProduto);
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };
 
 export const substituir = (req: Request, res: Response): void => {
@@ -62,14 +69,17 @@ export const substituir = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = produtos.findIndex(p => p.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Produto não encontrado.' });
-    return;
-  }
+  try {
+    const produto = produtoRepository.substituirProduto(id, validacao.data);
+    if (!produto) {
+      res.status(404).json({ erro: 'Produto não encontrado.' });
+      return;
+    }
 
-  produtos[index] = { id, ...validacao.data };
-  res.json(produtos[index]);
+    res.json(produto);
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };
 
 export const atualizar = (req: Request, res: Response): void => {
@@ -87,14 +97,17 @@ export const atualizar = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = produtos.findIndex(p => p.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Produto não encontrado.' });
-    return;
-  }
+  try {
+    const produto = produtoRepository.atualizarProduto(id, validacao.data);
+    if (!produto) {
+      res.status(404).json({ erro: 'Produto não encontrado.' });
+      return;
+    }
 
-  produtos[index] = { ...produtos[index], ...validacao.data };
-  res.json(produtos[index]);
+    res.json(produto);
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };
 
 export const remover = (req: Request, res: Response): void => {
@@ -105,12 +118,15 @@ export const remover = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = produtos.findIndex(p => p.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Produto não encontrado.' });
-    return;
-  }
+  try {
+    const removido = produtoRepository.removerProduto(id);
+    if (!removido) {
+      res.status(404).json({ erro: 'Produto não encontrado.' });
+      return;
+    }
 
-  produtos.splice(index, 1);
-  res.status(204).send();
+    res.status(204).send();
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };

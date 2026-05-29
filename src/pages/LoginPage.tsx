@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Fingerprint, AtSign, Lock, Eye } from 'lucide-react';
+import { ArrowLeft, Fingerprint, AtSign, Lock, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { getHomeByTipoConta, login } from '../api/auth';
 import './Auth.css';
 
 const LoginPage: React.FC = () => {
@@ -8,16 +9,21 @@ const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login attempt:', { email, password });
-    if (email === 'admin@nexus.tech') {
-      navigate('/admin');
-    } else if (email === 'talento@nexus.tech') {
-      navigate('/provider');
-    } else {
-      navigate('/dashboard');
+    setError('');
+    setLoading(true);
+
+    try {
+      const usuario = await login({ email, senha: password });
+      navigate(getHomeByTipoConta(usuario.tipoConta));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível entrar.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -27,6 +33,15 @@ const LoginPage: React.FC = () => {
       
       {/* Top Navigation */}
       <header className="auth-nav" style={{ justifyContent: 'center' }}>
+        <button
+          type="button"
+          className="auth-back-btn"
+          onClick={() => navigate(-1)}
+          aria-label="Voltar para a página anterior"
+          title="Voltar"
+        >
+          <ArrowLeft size={18} />
+        </button>
         <a href="/" className="auth-logo">
           <span style={{ border: '2px solid #00e5ff', padding: '2px 4px', borderRadius: '4px', fontSize: '1rem' }}>&#62;_</span>
           NEXUS-TECH
@@ -91,8 +106,10 @@ const LoginPage: React.FC = () => {
               </label>
             </div>
 
+            {error && <p className="auth-error">{error}</p>}
+
             <button type="submit" className="auth-submit-btn">
-              Inicializar Conexão
+              {loading ? 'Validando...' : 'Inicializar Conexão'}
             </button>
           </form>
 

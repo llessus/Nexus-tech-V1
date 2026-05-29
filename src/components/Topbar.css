@@ -15,7 +15,26 @@
 .dash-logo-nav {
   display: flex;
   align-items: center;
-  gap: 2rem;
+  gap: 1rem;
+}
+
+.dash-back-btn {
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  background: #121212;
+  color: #a1a1aa;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s;
+}
+
+.dash-back-btn:hover {
+  border-color: rgba(0, 229, 255, 0.5);
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.08);
 }
 
 .dash-logo {
@@ -29,6 +48,7 @@
 
 .dash-nav-links {
   display: flex;
+  margin-left: 1rem;
   gap: 1.5rem;
   color: #a1a1aa;
   font-size: 0.9rem;
@@ -106,6 +126,20 @@
   height: 32px;
   border-radius: 50%;
   object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dash-avatar-iniciais {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00e5ff, #0077ff);
+  color: black;
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 

@@ -1,19 +1,22 @@
 import { Request, Response } from 'express';
 import { criarServicoDto, atualizarServicoDto } from '../dtos/servico.dto';
+import * as servicoRepository from '../repositories/servico.repository';
 
-// Simulação de banco de dados
-let servicos: any[] = [];
-let nextId = 1;
+const erroInterno = (res: Response, erro: unknown) => {
+  console.error(erro);
+  res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+};
 
-export const listar = (req: Request, res: Response) => {
-  const { titulo } = req.query;
-  let resultado = servicos;
+const erroRelacionamento = (erro: any) => erro?.message?.includes('FOREIGN KEY constraint failed');
 
-  if (titulo && typeof titulo === 'string') {
-    resultado = resultado.filter(s => s.titulo.toLowerCase().includes(titulo.toLowerCase()));
+export const listar = (req: Request, res: Response): void => {
+  try {
+    const { titulo } = req.query;
+    const servicos = servicoRepository.listarServicos(typeof titulo === 'string' ? titulo : undefined);
+    res.json(servicos);
+  } catch (erro) {
+    erroInterno(res, erro);
   }
-
-  res.json(resultado);
 };
 
 export const obterPorId = (req: Request, res: Response): void => {
@@ -24,13 +27,17 @@ export const obterPorId = (req: Request, res: Response): void => {
     return;
   }
 
-  const servico = servicos.find(s => s.id === id);
-  if (!servico) {
-    res.status(404).json({ erro: 'Serviço não encontrado.' });
-    return;
-  }
+  try {
+    const servico = servicoRepository.obterServicoPorId(id);
+    if (!servico) {
+      res.status(404).json({ erro: 'Serviço não encontrado.' });
+      return;
+    }
 
-  res.json(servico);
+    res.json(servico);
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };
 
 export const criar = (req: Request, res: Response): void => {
@@ -41,10 +48,17 @@ export const criar = (req: Request, res: Response): void => {
     return;
   }
 
-  const novoServico = { id: nextId++, ...validacao.data };
-  servicos.push(novoServico);
+  try {
+    const novoServico = servicoRepository.criarServico(validacao.data);
+    res.status(201).json(novoServico);
+  } catch (erro: any) {
+    if (erroRelacionamento(erro)) {
+      res.status(400).json({ erro: 'O talento informado não existe.' });
+      return;
+    }
 
-  res.status(201).json(novoServico);
+    erroInterno(res, erro);
+  }
 };
 
 export const substituir = (req: Request, res: Response): void => {
@@ -62,14 +76,22 @@ export const substituir = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = servicos.findIndex(s => s.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Serviço não encontrado.' });
-    return;
-  }
+  try {
+    const servico = servicoRepository.substituirServico(id, validacao.data);
+    if (!servico) {
+      res.status(404).json({ erro: 'Serviço não encontrado.' });
+      return;
+    }
 
-  servicos[index] = { id, ...validacao.data };
-  res.json(servicos[index]);
+    res.json(servico);
+  } catch (erro: any) {
+    if (erroRelacionamento(erro)) {
+      res.status(400).json({ erro: 'O talento informado não existe.' });
+      return;
+    }
+
+    erroInterno(res, erro);
+  }
 };
 
 export const atualizar = (req: Request, res: Response): void => {
@@ -87,14 +109,22 @@ export const atualizar = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = servicos.findIndex(s => s.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Serviço não encontrado.' });
-    return;
-  }
+  try {
+    const servico = servicoRepository.atualizarServico(id, validacao.data);
+    if (!servico) {
+      res.status(404).json({ erro: 'Serviço não encontrado.' });
+      return;
+    }
 
-  servicos[index] = { ...servicos[index], ...validacao.data };
-  res.json(servicos[index]);
+    res.json(servico);
+  } catch (erro: any) {
+    if (erroRelacionamento(erro)) {
+      res.status(400).json({ erro: 'O talento informado não existe.' });
+      return;
+    }
+
+    erroInterno(res, erro);
+  }
 };
 
 export const remover = (req: Request, res: Response): void => {
@@ -105,12 +135,15 @@ export const remover = (req: Request, res: Response): void => {
     return;
   }
 
-  const index = servicos.findIndex(s => s.id === id);
-  if (index === -1) {
-    res.status(404).json({ erro: 'Serviço não encontrado.' });
-    return;
-  }
+  try {
+    const removido = servicoRepository.removerServico(id);
+    if (!removido) {
+      res.status(404).json({ erro: 'Serviço não encontrado.' });
+      return;
+    }
 
-  servicos.splice(index, 1);
-  res.status(204).send();
+    res.status(204).send();
+  } catch (erro) {
+    erroInterno(res, erro);
+  }
 };

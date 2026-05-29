@@ -26,7 +26,7 @@ O projeto foi desenvolvido utilizando uma arquitetura unificada de repositório 
 - **Ambiente/Framework:** [Node.js](https://nodejs.org/) com [Express](https://expressjs.com/) (e [TypeScript](https://www.typescriptlang.org/)).
 - **Execução:** `tsx` - Para rodar e assistir mudanças no código TypeScript do servidor em tempo real.
 - **Validação de Dados:** [Zod](https://zod.dev/) - Esquemas robustos de validação de dados para as requisições (DTOs).
-- **Banco de Dados:** Simulação em memória (Mock Database) - Armazenamento temporário em memória para demonstração ágil sem necessidade de configuração de SGBD externo.
+- **Banco de Dados:** PostgreSQL via Neon - Persistência real preparada para deploy futuro na Vercel.
 
 ---
 
@@ -64,7 +64,16 @@ Abra o terminal no diretório do projeto e execute:
 npm install
 ```
 
-### 2. Iniciar o Servidor Backend (API)
+### 2. Configurar o Banco Neon
+
+Crie um arquivo `.env` a partir do exemplo e preencha `DATABASE_URL` com a string de conexão do Neon:
+
+```bash
+cp .env.example .env
+npm run db:migrate
+```
+
+### 3. Iniciar o Servidor Backend (API)
 
 O backend é responsável por fornecer as rotas dos produtos, talentos e serviços. Execute o seguinte comando em um terminal:
 
@@ -74,7 +83,13 @@ npm run dev:api
 
 O servidor da API estará ativo em: **`http://localhost:3000`**
 
-### 3. Iniciar o Servidor Frontend (Vite)
+Usuário inicial criado pela migração:
+
+- **E-mail:** `brendon@gmail.com`
+- **Senha:** `brendon12`
+- **Perfil:** Prestador
+
+### 4. Iniciar o Servidor Frontend (Vite)
 
 Em **outro** terminal, inicie o servidor de desenvolvimento do React:
 
@@ -90,6 +105,7 @@ O Vite disponibilizará um link local no terminal (geralmente **`http://localhos
 
 A API expõe as seguintes rotas base (porta `3000`):
 
+- **Autenticação:** `/auth/register`, `/auth/login`, `/auth/usuarios`
 - **Produtos:** `/produtos` (GET, GET /:id, POST, PUT, PATCH, DELETE)
 - **Talentos:** `/talentos` (GET, GET /:id, POST, PUT, PATCH, DELETE)
 - **Serviços:** `/servicos` (GET, GET /:id, POST, PUT, PATCH, DELETE)

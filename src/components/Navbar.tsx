@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { Menu, X, Rocket, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Menu, X, Rocket, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { getUsuarioLogado, getHomeByTipoConta } from '../api/auth';
 import './Navbar.css';
 
 const navLinks = [
@@ -12,6 +14,8 @@ const navLinks = [
 ];
 
 const Navbar: React.FC = () => {
+  const navigate = useNavigate();
+  const usuario = getUsuarioLogado();
   const [isOpen, setIsOpen] = useState(false);
   const { scrollY } = useScroll();
   
@@ -53,6 +57,16 @@ const Navbar: React.FC = () => {
     >
       <div className="navbar-container">
         <div className="navbar-content">
+          <button
+            type="button"
+            className="navbar-back-btn"
+            onClick={() => navigate(-1)}
+            aria-label="Voltar para a página anterior"
+            title="Voltar"
+          >
+            <ArrowLeft size={18} />
+          </button>
+
           {/* Logo */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -86,9 +100,16 @@ const Navbar: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                if (usuario) {
+                  navigate(getHomeByTipoConta(usuario.tipoConta));
+                } else {
+                  navigate('/login');
+                }
+              }}
               className="navbar-btn"
             >
-              Começar Agora
+              {usuario ? 'Ir para o Painel' : 'Começar Agora'}
               <ChevronRight className="icon" size={16} />
             </motion.button>
           </div>
@@ -129,8 +150,18 @@ const Navbar: React.FC = () => {
                 </motion.a>
               ))}
               <div style={{ paddingTop: '1rem' }}>
-                <button className="navbar-mobile-btn-full">
-                  Começar Agora
+                <button 
+                  onClick={() => {
+                    setIsOpen(false);
+                    if (usuario) {
+                      navigate(getHomeByTipoConta(usuario.tipoConta));
+                    } else {
+                      navigate('/login');
+                    }
+                  }}
+                  className="navbar-mobile-btn-full"
+                >
+                  {usuario ? 'Ir para o Painel' : 'Começar Agora'}
                 </button>
               </div>
             </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, AtSign, Lock, ShieldCheck, Terminal, Bot } from 'lucide-react';
+import { ArrowLeft, User, AtSign, Lock, ShieldCheck, Terminal, Bot } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { register } from '../api/auth';
 import './Auth.css';
 
 const RegisterPage: React.FC = () => {
@@ -12,11 +13,33 @@ const RegisterPage: React.FC = () => {
     password: '',
     confirmPassword: ''
   });
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Register attempt:', { accountType, ...formData });
-    navigate('/login');
+    setError('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('As senhas precisam ser iguais.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      await register({
+        nome: formData.name,
+        email: formData.email,
+        senha: formData.password,
+        tipoConta: accountType === 'talento' ? 'prestador' : 'cliente',
+      });
+      navigate('/login');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível criar a conta.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -25,6 +48,15 @@ const RegisterPage: React.FC = () => {
       
       {/* Top Navigation */}
       <header className="auth-nav">
+        <button
+          type="button"
+          className="auth-back-btn inline"
+          onClick={() => navigate(-1)}
+          aria-label="Voltar para a página anterior"
+          title="Voltar"
+        >
+          <ArrowLeft size={18} />
+        </button>
         <a href="/" className="auth-logo">
           NEXUS-TECH
         </a>
@@ -144,8 +176,10 @@ const RegisterPage: React.FC = () => {
               </div>
             </div>
 
+            {error && <p className="auth-error">{error}</p>}
+
             <button type="submit" className="auth-submit-btn">
-              Inicializar Registro
+              {loading ? 'Criando conta...' : 'Inicializar Registro'}
             </button>
           </form>
 

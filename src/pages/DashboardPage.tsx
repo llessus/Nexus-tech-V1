@@ -1,72 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, 
   Star,
   Bookmark,
   Wallet,
   SlidersHorizontal,
-  Plus
+  Send,
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/Topbar';
+import { getUsuarioLogado } from '../api/auth';
+import { listarTalentos, Talento } from '../api/talentos';
+import { listarContratacoesPorCliente, ContratacaoComTalento } from '../api/contratacoes';
 import './DashboardPage.css';
-
-const MOCK_TALENTS = [
-  {
-    id: 1,
-    name: "Billie Elinho",
-    role: "FULL STACK SENIOR",
-    rating: 4.9,
-    location: "Remoto",
-    hourlyRate: 150,
-    skills: ["REACT", "NODE.JS", "AWS", "TYPESCRIPT"],
-    avatar: "https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=100&auto=format&fit=crop",
-    verified: true
-  },
-  {
-    id: 2,
-    name: "Sabrina carpinteira",
-    role: "PRODUCT DESIGNER SENIOR",
-    rating: 5.0,
-    location: "São Paulo",
-    hourlyRate: 180,
-    skills: ["FIGMA", "DESIGN SYSTEMS", "UX RESEARCH"],
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=100&auto=format&fit=crop",
-    verified: true
-  },
-  {
-    id: 3,
-    name: "Neymar",
-    role: "DEVOPS SPECIALIST",
-    rating: 4.8,
-    location: "Santos",
-    hourlyRate: 200,
-    skills: ["KUBERNETES", "TERRAFORM", "AZURE"],
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=100&auto=format&fit=crop",
-    verified: true
-  },
-  {
-    id: 4,
-    name: "Toguro Mobile",
-    role: "IOS / ANDROID DEVELOPER",
-    rating: 4.9,
-    location: "Remoto",
-    hourlyRate: 140,
-    skills: ["FLUTTER", "SWIFT", "FIREBASE"],
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=100&auto=format&fit=crop",
-    verified: true
-  }
-];
 
 const CATEGORIES = ["Todos", "Desenvolvedores", "Designers", "DevOps", "Mobile", "QA"];
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("Todos");
+  const [talents, setTalents] = useState<Talento[]>([]);
+  const [loading, setLoading] = useState(true);
+  const usuario = getUsuarioLogado();
+  const firstName = usuario?.nome?.split(' ')[0] || '';
+
+  // Estados para o Modal de Serviços Contratados
+  const [showContratacoesModal, setShowContratacoesModal] = useState(false);
+  const [contratacoes, setContratacoes] = useState<ContratacaoComTalento[]>([]);
+  const [loadingContratacoes, setLoadingContratacoes] = useState(false);
+
+  useEffect(() => {
+    listarTalentos()
+      .then(data => {
+        setTalents(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error('Erro ao listar talentos:', err);
+        setLoading(false);
+      });
+  }, []);
+
+  const handleOpenContratacoes = () => {
+    setShowContratacoesModal(true);
+    if (usuario) {
+      setLoadingContratacoes(true);
+      listarContratacoesPorCliente(usuario.id)
+        .then(data => {
+          setContratacoes(data);
+          setLoadingContratacoes(false);
+        })
+        .catch(err => {
+          console.error('Erro ao buscar contratações:', err);
+          setLoadingContratacoes(false);
+        });
+    }
+  };
+
+  const filteredTalents = talents.filter((talent) => {
+    if (activeCategory === 'Todos') return true;
+    const role = talent.role.toUpperCase();
+    if (activeCategory === 'Desenvolvedores') {
+      return role.includes('DEVELOPER') || role.includes('STACK') || role.includes('FRONT') || role.includes('BACK') || role.includes('ENGINEER');
+    }
+    if (activeCategory === 'Designers') {
+      return role.includes('DESIGNER') || role.includes('UX') || role.includes('UI');
+    }
+    if (activeCategory === 'DevOps') {
+      return role.includes('DEVOPS') || role.includes('INFRA') || role.includes('CLOUD') || role.includes('SYSADMIN');
+    }
+    if (activeCategory === 'Mobile') {
+      return role.includes('MOBILE') || role.includes('IOS') || role.includes('ANDROID') || role.includes('FLUTTER') || role.includes('REACT NATIVE');
+    }
+    if (activeCategory === 'QA') {
+      return role.includes('QA') || role.includes('TEST') || role.includes('QUALITY');
+    }
+    return true;
+  });
+
+  const formatCurrency = (val: number) => {
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  };
 
   return (
     <div className="dash-container">
-      <Topbar />
+      <Topbar onShowContratacoes={handleOpenContratacoes} />
 
       <main className="dash-main">
         {/* Welcome Banner */}
@@ -74,8 +94,9 @@ const DashboardPage: React.FC = () => {
           <div className="dash-hero-overlay" />
           <div className="dash-hero-content">
             <h1 className="dash-hero-title">
-              Acelere seu próximo<br/>
-              projeto com a <span className="dash-hero-title-highlight">Nexus</span>
+              {firstName ? `Olá, ${firstName}!` : 'Acelere seu próximo'}<br/>
+              {firstName ? 'Acelere seu projeto com a ' : 'projeto com a '}
+              <span className="dash-hero-title-highlight">Nexus</span>
             </h1>
             <p className="dash-hero-desc">
               Encontre profissionais validados e com histórico comprovado<br/>
@@ -114,54 +135,201 @@ const DashboardPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Talent Grid */}
-        <div className="dash-grid">
-          {MOCK_TALENTS.map((talent) => (
-            <div key={talent.id} className="talent-card">
-              <div className="talent-header">
-                <div className="talent-info-left">
-                  <img src={talent.avatar} alt={talent.name} className="talent-avatar" />
-                  <div>
-                    <h3 className="talent-name">{talent.name}</h3>
-                    <p className="talent-role">{talent.role}</p>
-                    <div className="talent-rating">
-                      <Star size={14} color="#facc15" fill="#facc15" />
-                      <span>{talent.rating.toFixed(1)}</span>
+        {/* Talent Grid / State display */}
+        {loading ? (
+          <div className="dash-loading" style={{ textAlign: 'center', padding: '5rem', color: '#a1a1aa', fontSize: '1.1rem', fontWeight: 500 }}>
+            Carregando talentos do banco...
+          </div>
+        ) : filteredTalents.length === 0 ? (
+          <div className="dash-no-results" style={{ textAlign: 'center', padding: '5rem', color: '#a1a1aa', fontSize: '1.1rem', fontWeight: 500 }}>
+            Nenhum talento encontrado nesta categoria.
+          </div>
+        ) : (
+          <div className="dash-grid">
+            {filteredTalents.map((talent) => {
+              // Simular notas consistentes por ID
+              const rating = 4.8 + (talent.id % 3) * 0.1;
+              const location = talent.id % 2 === 0 ? "Remoto" : "São Paulo";
+              
+              return (
+                <div key={talent.id} className="talent-card">
+                  <div className="talent-header">
+                    <div className="talent-info-left">
+                      <img 
+                        src={talent.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop"} 
+                        alt={talent.nome} 
+                        className="talent-avatar" 
+                      />
+                      <div>
+                        <h3 className="talent-name">{talent.nome}</h3>
+                        <p className="talent-role">{talent.role}</p>
+                        <div className="talent-rating">
+                          <Star size={14} color="#facc15" fill="#facc15" />
+                          <span>{rating.toFixed(1)}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Bookmark className="talent-bookmark" size={24} />
+                  </div>
+
+                  <div className="talent-meta">
+                    <div className="talent-meta-item">
+                      <MapPin size={16} />
+                      <span>{location}</span>
+                    </div>
+                    <div className="talent-meta-item">
+                      <Wallet size={16} />
+                      <span>R$ {talent.hourlyRate}/h</span>
                     </div>
                   </div>
-                </div>
-                <Bookmark className="talent-bookmark" size={24} />
-              </div>
 
-              <div className="talent-meta">
-                <div className="talent-meta-item">
-                  <MapPin size={16} />
-                  <span>{talent.location}</span>
-                </div>
-                <div className="talent-meta-item">
-                  <Wallet size={16} />
-                  <span>R$ {talent.hourlyRate}/h</span>
-                </div>
-              </div>
+                  <div className="talent-tags">
+                    {talent.skills.map(skill => (
+                       <span key={skill} className="talent-tag">{skill}</span>
+                    ))}
+                  </div>
 
-              <div className="talent-tags">
-                {talent.skills.map(skill => (
-                   <span key={skill} className="talent-tag">{skill}</span>
-                ))}
-              </div>
-
-              <div className="talent-actions">
-                <button className="btn-outline" onClick={() => navigate(`/talent/${talent.id}`)}>Ver Perfil</button>
-                <button className="btn-cyan" onClick={() => navigate(`/hire/${talent.id}`)}>Contratar</button>
-              </div>
-            </div>
-          ))}
-        </div>
+                  <div className="talent-actions">
+                    <button className="btn-outline" onClick={() => navigate(`/talent/${talent.id}`)}>Ver Perfil</button>
+                    <button className="btn-cyan" onClick={() => navigate(`/hire/${talent.id}`)}>Contratar</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
-      {/* Floating Action Button */}
-      <button className="fab">
-        <Plus size={28} />
+      {/* Modal de Serviços Contratados */}
+      {showContratacoesModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: '#121212', border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '1.5rem', width: '90%', maxWidth: '650px', padding: '2rem',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.9)', position: 'relative'
+          }}>
+            <button 
+              onClick={() => setShowContratacoesModal(false)}
+              style={{
+                position: 'absolute', top: '1.5rem', right: '1.5rem', background: 'none',
+                border: 'none', color: '#a1a1aa', cursor: 'pointer', display: 'flex', alignItems: 'center'
+              }}
+            >
+              <X size={24} />
+            </button>
+
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.5rem', color: 'white' }}>
+              Serviços Contratados
+            </h2>
+            <p style={{ color: '#71717a', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
+              Histórico de contratos de desenvolvimento e design que você firmou na plataforma.
+            </p>
+
+            <div style={{ maxHeight: '350px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              {loadingContratacoes ? (
+                <div style={{ color: '#a1a1aa', textAlign: 'center', padding: '2rem' }}>
+                  Buscando contratações...
+                </div>
+              ) : contratacoes.length === 0 ? (
+                <div style={{ color: '#71717a', textAlign: 'center', padding: '3rem' }}>
+                  Nenhum serviço contratado até o momento.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {contratacoes.map(c => (
+                    <div 
+                      key={c.id} 
+                      style={{
+                        backgroundColor: '#1a1a1a', borderRadius: '1rem', padding: '1.25rem',
+                        border: '1px solid rgba(255, 255, 255, 0.03)', display: 'flex',
+                        alignItems: 'center', justifyContent: 'space-between', gap: '1rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <img 
+                          src={c.talentoAvatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=80&auto=format&fit=crop"} 
+                          alt={c.talentoNome} 
+                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
+                        />
+                        <div>
+                          <h4 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'white' }}>
+                            {c.talentoNome}
+                          </h4>
+                          <p style={{ fontSize: '0.8rem', color: '#a1a1aa', margin: '0.1rem 0' }}>
+                            {c.talentoRole}
+                          </p>
+                          <span style={{ fontSize: '0.75rem', color: '#71717a' }}>
+                            Contratado em {new Date(c.createdAt).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontSize: '0.8rem', fontWeight: 600 }}>
+                          <CheckCircle2 size={14} />
+                          <span>{c.status}</span>
+                        </div>
+                        <strong style={{ fontSize: '1rem', color: '#00e5ff' }}>
+                          {formatCurrency(c.valorTotal)}
+                        </strong>
+                        <span style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>
+                          Carga: {c.horas}h
+                        </span>
+                        <button
+                          onClick={() => {
+                            setShowContratacoesModal(false);
+                            navigate(`/chat?talentoId=${c.talentoId}`);
+                          }}
+                          style={{
+                            background: 'rgba(0, 229, 255, 0.1)',
+                            border: '1px solid rgba(0, 229, 255, 0.3)',
+                            color: '#00e5ff',
+                            borderRadius: '0.25rem',
+                            padding: '0.25rem 0.5rem',
+                            fontSize: '0.7rem',
+                            cursor: 'pointer',
+                            marginTop: '0.35rem',
+                            fontWeight: 600,
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          Chat com Talento
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn-cyan" 
+                onClick={() => setShowContratacoesModal(false)}
+                style={{ width: 'auto', padding: '0.6rem 1.5rem' }}
+              >
+                Fechar Painel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Action Button (Instagram-style messaging paper airplane) */}
+      <button 
+        className="fab" 
+        onClick={() => navigate('/chat')}
+        style={{ 
+          background: 'linear-gradient(135deg, #00e5ff, #0077ff)', 
+          color: 'black',
+          boxShadow: '0 0 15px rgba(0, 229, 255, 0.4)'
+        }}
+      >
+        <Send size={24} style={{ transform: 'rotate(-45deg) translate(2px, -2px)' }} />
       </button>
     </div>
   );
