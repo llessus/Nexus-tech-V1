@@ -13,20 +13,19 @@
 
 ## 🛠 Stack Tecnológica
 
-O projeto foi desenvolvido utilizando uma arquitetura unificada de repositório (monorepo simples), contendo tanto o Frontend quanto o Backend sob a mesma estrutura TypeScript:
+O projeto foi desenvolvido utilizando uma arquitetura unificada de repositório (monorepo simples), contendo tanto o Frontend quanto o Backend sob a mesma estrutura:
 
-### Frontend
+### Frontend (Cliente)
 - **Framework:** [React](https://reactjs.org/) (com [TypeScript](https://www.typescriptlang.org/)) - Interfaces tipadas e seguras.
 - **Build Tool:** [Vite](https://vitejs.dev/) - Hot Module Replacement (HMR) rápido.
-- **Estilização:** [Tailwind CSS](https://tailwindcss.com/) - Design responsivo e moderno.
+- **Estilização:** CSS Vanilla com design responsivo, transições modernas e tema Dark Mode.
 - **Animações:** [Framer Motion](https://www.framer.com/motion/) - Transições e interações dinâmicas fluidas.
 - **Ícones:** [Lucide React](https://lucide.dev/) - Biblioteca de ícones moderna.
 
-### Backend
-- **Ambiente/Framework:** [Node.js](https://nodejs.org/) com [Express](https://expressjs.com/) (e [TypeScript](https://www.typescriptlang.org/)).
-- **Execução:** `tsx` - Para rodar e assistir mudanças no código TypeScript do servidor em tempo real.
+### Backend (API)
+- **Ambiente/Framework:** [Vercel Serverless Functions](https://vercel.com/docs/functions/serverless-functions) com `@vercel/node` e TypeScript.
 - **Validação de Dados:** [Zod](https://zod.dev/) - Esquemas robustos de validação de dados para as requisições (DTOs).
-- **Banco de Dados:** PostgreSQL via Neon - Persistência real preparada para deploy futuro na Vercel.
+- **Banco de Dados:** PostgreSQL hospedado no [Neon Database](https://neon.tech/) (conexão serverless via `@neondatabase/serverless`).
 
 ---
 
@@ -34,78 +33,110 @@ O projeto foi desenvolvido utilizando uma arquitetura unificada de repositório 
 
 ```text
 Nexus-tech-V1/
-├── src/
-│   ├── api/          # Integração do frontend com a API
-│   ├── controllers/  # Controladores da API Express (Lógica de negócios)
-│   ├── dtos/         # Data Transfer Objects com esquemas de validação Zod
-│   ├── routes/       # Definições de rotas da API Express
-│   ├── components/   # Componentes React reutilizáveis
-│   ├── pages/        # Telas/Páginas da aplicação React
-│   ├── App.tsx       # Configuração de rotas React Router
-│   ├── main.tsx      # Ponto de entrada do Frontend
-│   └── index.ts      # Servidor Backend (Express)
-├── index.html        # Página base HTML do Vite
-├── package.json      # Scripts e dependências do projeto
-└── tsconfig.json     # Configurações do TypeScript
+├── api/                  # Backend: Endpoints das Serverless Functions da Vercel
+│   ├── auth.ts           # Login, registro, busca e edição de usuários
+│   ├── produtos.ts       # CRUD completo de produtos
+│   ├── talentos.ts       # CRUD e filtros de prestadores de serviços (talentos)
+│   └── ...               # Outros endpoints de negócio e upload
+├── src/                  # Frontend & Lógica compartilhada do banco de dados
+│   ├── api/              # Chamadas HTTP do frontend para as rotas do backend
+│   ├── components/       # Componentes React reutilizáveis (Navbar, Topbar, etc.)
+│   ├── database/         # Cliente PostgreSQL (Neon) e arquivos de migração
+│   ├── dtos/             # Schemas de validação de dados com Zod (Zod DTOs)
+│   ├── pages/            # Páginas/Telas do app (Login, Cadastro, Dashboards, etc.)
+│   ├── repositories/     # Camada de banco de dados (Consultas SQL nativas)
+│   ├── utils/            # Utilitários auxiliares (ex: hash e validação de senhas com PBKDF2)
+│   ├── App.tsx           # Gerenciamento de rotas com React Router
+│   └── main.tsx          # Ponto de entrada do Frontend
+├── vercel.json           # Configuração de rewrites de rotas para a Vercel
+├── vite.config.ts        # Configuração do Vite e proxy reverso local da API
+├── package.json          # Dependências e scripts do projeto
+└── README.md             # Instruções do projeto
 ```
 
 ---
 
-## 🚀 Como Executar o Projeto
+## 🚀 Como Executar o Projeto Localmente
 
 Para rodar o projeto localmente, siga os passos abaixo. Certifique-se de possuir o **Node.js** instalado em sua máquina.
 
-### 1. Clonar o Repositório e Instalar Dependências
+### 1. Instalar as Dependências
 
 Abra o terminal no diretório do projeto e execute:
 
 ```bash
-# Instala todas as dependências necessárias para o frontend e backend
 npm install
 ```
 
-### 2. Configurar o Banco Neon
+### 2. Configurar as Variáveis de Ambiente
 
-Crie um arquivo `.env` a partir do exemplo e preencha `DATABASE_URL` com a string de conexão do Neon:
+Crie um arquivo chamado `.env` na raiz do projeto contendo a string de conexão com o banco Neon Database (você pode se basear no `.env.example`):
 
-```bash
-cp .env.example .env
-npm run db:migrate
+```env
+DATABASE_URL="postgres://usuario:senha@host-neon/dbname?sslmode=require"
 ```
 
-### 3. Iniciar o Servidor Backend (API)
+### 3. Rodar as Migrações do Banco de Dados
 
-O backend é responsável por fornecer as rotas dos produtos, talentos e serviços. Execute o seguinte comando em um terminal:
+Para criar as tabelas e dados iniciais no banco PostgreSQL do Neon, inicie a aplicação localmente (passo 4) e faça uma requisição do tipo **POST** para a rota `/api/db-migrate` (usando Postman, Insomnia ou similar):
 
-```bash
-npm run dev:api
-```
+* **URL:** `http://localhost:3000/api/db-migrate`
+* **Método:** `POST`
 
-O servidor da API estará ativo em: **`http://localhost:3000`**
+Isso executará o script de migração contido no banco de dados e preparará a estrutura das tabelas.
 
-Usuário inicial criado pela migração:
+### 4. Iniciar a Aplicação (Front e Back)
 
-- **E-mail:** `brendon@gmail.com`
-- **Senha:** `brendon12`
-- **Perfil:** Prestador
-
-### 4. Iniciar o Servidor Frontend (Vite)
-
-Em **outro** terminal, inicie o servidor de desenvolvimento do React:
+Como o backend utiliza Serverless Functions da Vercel, a melhor forma de rodar o projeto localmente com as rotas do backend integradas é usando o servidor de desenvolvimento da **Vercel CLI**:
 
 ```bash
-npm run dev
+npx vercel dev
 ```
 
-O Vite disponibilizará um link local no terminal (geralmente **`http://localhost:5173`** ou similar). Abra o link no seu navegador para interagir com o Nexus Tech.
+O servidor da Vercel iniciará e disponibilizará o link no terminal (geralmente **`http://localhost:3000`**).
+A Vercel cuidará automaticamente de rodar o frontend React e servir os endpoints de `/api/*`.
 
 ---
 
 ## 📡 Endpoints Principais da API
 
-A API expõe as seguintes rotas base (porta `3000`):
+A API expõe as seguintes rotas base:
 
-- **Autenticação:** `/auth/register`, `/auth/login`, `/auth/usuarios`
-- **Produtos:** `/produtos` (GET, GET /:id, POST, PUT, PATCH, DELETE)
-- **Talentos:** `/talentos` (GET, GET /:id, POST, PUT, PATCH, DELETE)
-- **Serviços:** `/servicos` (GET, GET /:id, POST, PUT, PATCH, DELETE)
+* **Autenticação:**
+  * `POST /api/auth/register` - Cadastro de novos usuários
+  * `POST /api/auth/login` - Login e criação de sessão (localStorage)
+  * `PUT /api/auth/perfil` - Atualização de perfil do usuário logado
+* **Produtos:**
+  * `GET /api/produtos` - Listagem de produtos
+  * `POST /api/produtos` - Cadastro de novos produtos
+  * `GET /api/produtos/:id` - Detalhes de um produto
+  * `PUT/PATCH /api/produtos/:id` - Atualização de produto
+  * `DELETE /api/produtos/:id` - Remoção de produto
+* **Talentos / Prestadores:**
+  * `GET /api/talentos` - Listar e filtrar talentos/prestadores
+* **Contratações:**
+  * `POST /api/contratacoes` - Registrar nova contratação
+  * `GET /api/contratacoes` - Histórico de serviços contratados
+
+---
+
+## ⚠️ Instruções Críticas para Entrega (.ZIP)
+
+> [!CAUTION]
+> **NUNCA ENVIE A PASTA `node_modules` NO ARQUIVO .ZIP!**
+> Enviar a pasta `node_modules` causará um **desconto de 40% na nota** final do projeto.
+
+### Como gerar o arquivo `.zip` da forma correta:
+
+#### No Windows (PowerShell):
+Se você estiver utilizando Windows, você pode criar o arquivo zip excluindo a pasta `node_modules` rodando este comando no terminal da pasta raiz do projeto:
+```powershell
+Compress-Archive -Path (Get-ChildItem -Path . -Exclude "node_modules", ".git") -DestinationPath "Nexus-Tech-Entrega.zip" -Force
+```
+
+#### No macOS ou Linux (Terminal):
+```bash
+zip -r Nexus-Tech-Entrega.zip . -x "node_modules/*" -x ".git/*"
+```
+
+O arquivo `Nexus-Tech-Entrega.zip` gerado conterá apenas o seu código fonte e poderá ser compartilhado com segurança.

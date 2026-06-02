@@ -114,7 +114,7 @@ export const obterContatosRecentes = async (usuarioId: number): Promise<ContatoC
       email: usuarioInfo.email,
       tipoConta: usuarioInfo.tipo_conta,
       ultimaMensagem: ultimaMsg?.conteudo || '',
-      dataUltimaMensagem: ultimaMsg?.created_at || '',
+      dataUltimaMensagem: ultimaMsg?.created_at ? new Date(ultimaMsg.created_at).toISOString() : '',
       naoLidas: naoLidasRows[0]?.count ?? 0,
     });
   }
@@ -148,5 +148,9 @@ export const obterContatosRecentes = async (usuarioId: number): Promise<ContatoC
   }
 
   // Ordena pela data da última mensagem decrescente
-  return contatos.sort((a, b) => b.dataUltimaMensagem.localeCompare(a.dataUltimaMensagem));
+  return contatos.sort((a, b) => {
+    const dateA = a.dataUltimaMensagem ? new Date(a.dataUltimaMensagem).getTime() : 0;
+    const dateB = b.dataUltimaMensagem ? new Date(b.dataUltimaMensagem).getTime() : 0;
+    return dateB - dateA;
+  });
 };
