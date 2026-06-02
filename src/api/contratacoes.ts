@@ -48,3 +48,20 @@ export const listarContratacoesPorCliente = async (
 
   return response.json();
 };
+
+export interface ContratacaoComCliente extends Contratacao {
+  clienteNome: string;
+  clienteEmail: string;
+}
+
+export const listarContratacoesPorTalento = async (
+  talentoId: number
+): Promise<ContratacaoComCliente[]> => {
+  const response = await fetch(`${API_URL}/talento/${talentoId}`);
+
+  if (!response.ok) {
+    throw new Error('Falha ao listar propostas');
+  }
+
+  return response.json();
+};

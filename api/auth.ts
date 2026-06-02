@@ -25,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           nome: usuario.nome,
           email: usuario.email,
           tipoConta: usuario.tipoConta,
+          avatarUrl: usuario.avatarUrl,
         },
       });
     } catch (erro) {
@@ -46,6 +47,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const senhaHash = criarHashSenha(validacao.data.senha);
       const usuario = await usuarioRepository.criarUsuario(validacao.data, senhaHash);
       return res.status(201).json({ usuario });
+    } catch (erro) {
+      console.error(erro);
+      return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+    }
+  } else if (path.endsWith('/perfil') && (req.method === 'PUT' || req.method === 'PATCH')) {
+    const { id, nome, avatarUrl } = req.body;
+    if (!id || !nome) {
+      return res.status(400).json({ erro: 'ID e Nome são obrigatórios.' });
+    }
+    try {
+      const usuarioAtualizado = await usuarioRepository.atualizarUsuario(Number(id), nome, avatarUrl || null);
+      if (!usuarioAtualizado) {
+        return res.status(404).json({ erro: 'Usuário não encontrado.' });
+      }
+      return res.json({ usuario: usuarioAtualizado });
     } catch (erro) {
       console.error(erro);
       return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });

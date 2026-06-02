@@ -6,6 +6,7 @@ export interface Usuario {
   nome: string;
   email: string;
   tipoConta: 'cliente' | 'prestador' | 'admin';
+  avatarUrl?: string | null;
 }
 
 export interface UsuarioComSenha extends Usuario {
@@ -17,6 +18,7 @@ const toUsuario = (row: any): Usuario => ({
   nome: row.nome,
   email: row.email,
   tipoConta: row.tipo_conta,
+  avatarUrl: row.avatar_url,
 });
 
 const toUsuarioComSenha = (row: any): UsuarioComSenha => ({
@@ -26,14 +28,14 @@ const toUsuarioComSenha = (row: any): UsuarioComSenha => ({
 
 export const listarUsuarios = async (): Promise<Usuario[]> => {
   const sql = getSQL();
-  const rows = await sql`SELECT id, nome, email, tipo_conta FROM usuarios ORDER BY id`;
+  const rows = await sql`SELECT id, nome, email, tipo_conta, avatar_url FROM usuarios ORDER BY id`;
   return rows.map(toUsuario);
 };
 
 export const buscarUsuarioPorEmail = async (email: string): Promise<UsuarioComSenha | null> => {
   const sql = getSQL();
   const rows = await sql`
-    SELECT id, nome, email, senha_hash, tipo_conta 
+    SELECT id, nome, email, senha_hash, tipo_conta, avatar_url 
     FROM usuarios WHERE email = ${email.toLowerCase()} LIMIT 1
   `;
   return rows.length > 0 ? toUsuarioComSenha(rows[0]) : null;
@@ -73,5 +75,34 @@ export const criarUsuario = async (
     nome: usuario.nome,
     email: usuario.email.toLowerCase(),
     tipoConta: usuario.tipoConta,
+    avatarUrl: null,
   };
+};
+
+export const atualizarUsuario = async (
+  id: number,
+  nome: string,
+  avatarUrl: string | null
+): Promise<Usuario | null> => {
+  const sql = getSQL();
+  
+  const updated = await sql`
+    UPDATE usuarios 
+    SET nome = ${nome}, avatar_url = ${avatarUrl}, updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING id, nome, email, tipo_conta, avatar_url
+  `;
+
+  if (updated.length === 0) return null;
+
+  // Se o usuário for um prestador, sincronizar nome e avatar_url no talento dele
+  if (updated[0].tipo_conta === 'prestador') {
+    await sql`
+      UPDATE talentos
+      SET nome = ${nome}, avatar_url = ${avatarUrl}, updated_at = NOW()
+      WHERE usuario_id = ${id}
+    `;
+  }
+
+  return toUsuario(updated[0]);
 };

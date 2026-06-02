@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Camera, LogOut, Save, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/Topbar';
-import { getUsuarioLogado, logout } from '../api/auth';
+import { getUsuarioLogado, logout, atualizarPerfil } from '../api/auth';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
@@ -17,18 +17,48 @@ const SettingsPage: React.FC = () => {
   const [github, setGithub] = useState('');
   const [portfolio, setPortfolio] = useState('');
   const [salvo, setSalvo] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(usuario?.avatarUrl ?? null);
+  const [uploading, setUploading] = useState(false);
 
   if (!usuario) {
     navigate('/login');
     return null;
   }
 
-  const handleSalvar = () => {
-    // Atualiza o nome no localStorage se foi alterado
-    const atualizado = { ...usuario, nome };
-    localStorage.setItem('nexus:user', JSON.stringify(atualizado));
-    setSalvo(true);
-    setTimeout(() => setSalvo(false), 2000);
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao fazer upload da imagem.');
+      }
+
+      const data = await response.json();
+      setAvatarUrl(data.url);
+    } catch (err) {
+      console.error('Erro no upload:', err);
+      alert('Falha ao carregar a foto de perfil.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSalvar = async () => {
+    try {
+      await atualizarPerfil(usuario.id, nome, avatarUrl);
+      setSalvo(true);
+      setTimeout(() => setSalvo(false), 2000);
+    } catch (err) {
+      console.error('Erro ao salvar perfil:', err);
+      alert('Falha ao salvar as alterações do perfil.');
+    }
   };
 
   const handleLogout = () => {
@@ -95,17 +125,34 @@ const SettingsPage: React.FC = () => {
                 <h2 className="settings-card-title">Informações do Perfil</h2>
 
                 <div className="settings-avatar-section">
-                  <div className="settings-avatar-wrapper">
-                    <div className="settings-avatar-iniciais">
-                      {iniciais || <UserCircle size={40} />}
-                    </div>
+                  <div 
+                    className="settings-avatar-wrapper"
+                    onClick={() => document.getElementById('avatar-upload-input')?.click()}
+                    style={{ cursor: 'pointer', overflow: 'hidden', position: 'relative' }}
+                  >
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div className="settings-avatar-iniciais" style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center' }}>
+                        {iniciais || <UserCircle size={40} />}
+                      </div>
+                    )}
                     <div className="settings-avatar-edit">
                       <Camera size={16} />
                     </div>
                   </div>
+                  <input
+                    type="file"
+                    id="avatar-upload-input"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={handleFileChange}
+                    disabled={uploading}
+                  />
                   <div className="settings-avatar-info">
                     <h3>{nome}</h3>
                     <p>{tipoLabel} · {usuario.email}</p>
+                    {uploading && <small style={{ color: '#00e5ff' }}>Enviando imagem...</small>}
                   </div>
                   <button
                     type="button"

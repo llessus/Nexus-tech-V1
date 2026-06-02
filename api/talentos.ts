@@ -13,6 +13,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (id === null) {
     if (req.method === 'GET') {
       try {
+        const usuarioIdStr = req.query.usuarioId;
+        if (usuarioIdStr) {
+          const usuarioId = Number(usuarioIdStr);
+          if (isNaN(usuarioId)) {
+            return res.status(400).json({ erro: 'O usuarioId deve ser um número válido.' });
+          }
+          const talento = await talentoRepository.obterTalentoPorUsuarioId(usuarioId);
+          if (!talento) return res.status(404).json({ erro: 'Talento não encontrado para este usuário.' });
+          return res.json(talento);
+        }
+
         const nome = typeof req.query.nome === 'string' ? req.query.nome : undefined;
         const talentos = await talentoRepository.listarTalentos(nome);
         return res.json(talentos);

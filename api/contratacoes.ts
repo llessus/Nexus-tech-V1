@@ -47,6 +47,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error(erro);
       return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
     }
+  } else if (parts.length === 4 && parts[2] === 'talento') {
+    if (req.method !== 'GET') {
+      return res.status(405).json({ erro: 'Método não permitido.' });
+    }
+
+    const talentoId = Number(parts[3]);
+    if (isNaN(talentoId)) {
+      return res.status(400).json({ erro: 'O talentoId deve ser um número válido.' });
+    }
+
+    try {
+      const contratacoes = await contratacaoRepository.listarContratacoesPorTalento(talentoId);
+      return res.json(contratacoes);
+    } catch (erro) {
+      console.error(erro);
+      return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+    }
   }
 
   return res.status(404).json({ erro: 'Rota não encontrada.' });

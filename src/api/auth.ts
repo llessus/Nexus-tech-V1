@@ -7,6 +7,7 @@ export interface UsuarioLogado {
   nome: string;
   email: string;
   tipoConta: TipoConta;
+  avatarUrl?: string | null;
 }
 
 export interface LoginPayload {
@@ -77,4 +78,27 @@ export const getHomeByTipoConta = (tipoConta: TipoConta) => {
   if (tipoConta === 'admin') return '/admin';
   if (tipoConta === 'prestador') return '/provider';
   return '/dashboard';
+};
+
+export const atualizarPerfil = async (
+  id: number,
+  nome: string,
+  avatarUrl: string | null
+): Promise<UsuarioLogado> => {
+  const response = await fetch(`${API_URL}/perfil`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id, nome, avatarUrl }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.erro || 'Falha ao atualizar perfil');
+  }
+
+  // Atualiza o localStorage com os novos dados
+  localStorage.setItem('nexus:user', JSON.stringify(data.usuario));
+  return data.usuario;
 };

@@ -103,3 +103,9 @@ export const removerTalento = async (id: number): Promise<boolean> => {
   const result = await sql`DELETE FROM talentos WHERE id = ${id} RETURNING id`;
   return result.length > 0;
 };
+
+export const obterTalentoPorUsuarioId = async (usuarioId: number): Promise<Talento | null> => {
+  const sql = getSQL();
+  const rows = await sql`SELECT * FROM talentos WHERE usuario_id = ${usuarioId}`;
+  return rows.length > 0 ? toTalento(rows[0]) : null;
+};

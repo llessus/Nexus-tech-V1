@@ -33,3 +33,13 @@ export const obterTalentoPorId = async (id: number): Promise<Talento> => {
   
   return response.json();
 };
+
+export const obterTalentoPorUsuarioId = async (usuarioId: number): Promise<Talento> => {
+  const response = await fetch(`${API_URL}?usuarioId=${usuarioId}`);
+  
+  if (!response.ok) {
+    throw new Error('Falha ao buscar talento do usuário');
+  }
+  
+  return response.json();
+};

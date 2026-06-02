@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email TEXT NOT NULL UNIQUE,
   senha_hash TEXT NOT NULL,
   tipo_conta TEXT NOT NULL CHECK (tipo_conta IN ('cliente', 'prestador', 'admin')),
+  avatar_url TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -88,6 +89,13 @@ export async function runMigration() {
   const statements = SCHEMA.split(';').map(s => s.trim()).filter(Boolean);
   for (const statement of statements) {
     await sql.query(statement);
+  }
+
+  // Garante que a coluna avatar_url exista na tabela usuarios
+  try {
+    await sql.query('ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT');
+  } catch (err) {
+    console.error('Erro ao adicionar coluna avatar_url na tabela usuarios:', err);
   }
 
   // Seed: insere o usuário inicial se ainda não existir

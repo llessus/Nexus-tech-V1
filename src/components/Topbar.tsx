@@ -125,9 +125,13 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
           <div 
             className="dash-avatar-iniciais" 
             onClick={() => navigate('/settings')}
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', padding: 0, overflow: 'hidden' }}
           >
-            {initials}
+            {usuario.avatarUrl ? (
+              <img src={usuario.avatarUrl} alt={usuario.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              initials
+            )}
           </div>
         ) : (
           <img 

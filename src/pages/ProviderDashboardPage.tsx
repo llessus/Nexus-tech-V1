@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getUsuarioLogado, logout } from '../api/auth';
+import { obterTalentoPorUsuarioId } from '../api/talentos';
+import { listarContratacoesPorTalento } from '../api/contratacoes';
 import './ProviderDashboardPage.css';
 
 const projects = [
@@ -35,6 +37,27 @@ const ProviderDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [active, setActive] = useState('painel');
   const usuario = getUsuarioLogado();
+  const [propostas, setPropostas] = useState<any[]>([]);
+  const [loadingPropostas, setLoadingPropostas] = useState(true);
+
+  React.useEffect(() => {
+    const carregarPropostas = async () => {
+      if (!usuario?.id) return;
+      try {
+        const talento = await obterTalentoPorUsuarioId(usuario.id);
+        if (talento) {
+          const dados = await listarContratacoesPorTalento(talento.id);
+          setPropostas(dados);
+        }
+      } catch (err) {
+        console.error('Erro ao buscar propostas:', err);
+      } finally {
+        setLoadingPropostas(false);
+      }
+    };
+    carregarPropostas();
+  }, [usuario?.id]);
+
   const firstName = useMemo(() => usuario?.nome?.split(' ')[0] || 'Brendon', [usuario]);
   const initials = useMemo(() => {
     if (!usuario?.nome) return 'B';
@@ -95,7 +118,17 @@ const ProviderDashboardPage: React.FC = () => {
         </nav>
 
         <div className="provider-profile">
-          <div className="provider-avatar">{initials}</div>
+          <div 
+            className="provider-avatar"
+            onClick={() => navigate('/settings')}
+            style={{ cursor: 'pointer', overflow: 'hidden' }}
+          >
+            {usuario?.avatarUrl ? (
+              <img src={usuario.avatarUrl} alt={usuario.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              initials
+            )}
+          </div>
           <div>
             <strong>{firstName}</strong>
             <span>Prestador de Serviços Tech</span>
@@ -118,7 +151,17 @@ const ProviderDashboardPage: React.FC = () => {
             </div>
             <button aria-label="Notificações"><Bell size={18} /></button>
             <button aria-label="Mensagens"><Mail size={18} /></button>
-            <div className="provider-small-avatar">{initials}</div>
+            <div 
+              className="provider-small-avatar"
+              onClick={() => navigate('/settings')}
+              style={{ cursor: 'pointer', overflow: 'hidden' }}
+            >
+              {usuario?.avatarUrl ? (
+                <img src={usuario.avatarUrl} alt={usuario.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                initials
+              )}
+            </div>
           </div>
         </header>
 
@@ -143,7 +186,10 @@ const ProviderDashboardPage: React.FC = () => {
           </article>
         </section>
 
-        <div className="provider-content-grid">
+        <div 
+          className="provider-content-grid"
+          style={propostas.length === 0 ? { gridTemplateColumns: '1fr' } : {}}
+        >
           <section className="provider-projects">
             <div className="provider-section-title">
               <h2>Projetos Ativos</h2>
@@ -176,36 +222,42 @@ const ProviderDashboardPage: React.FC = () => {
             ))}
           </section>
 
-          <aside className="provider-proposals">
-            <div className="provider-section-title">
-              <h2>Novas Propostas</h2>
-              <span className="provider-badge">3</span>
-            </div>
+          {propostas.length > 0 && (
+            <aside className="provider-proposals">
+              <div className="provider-section-title">
+                <h2>Novas Propostas</h2>
+                <span className="provider-badge">{propostas.length}</span>
+              </div>
 
-            {proposals.map(proposal => (
-              <article className="provider-proposal-card" key={proposal.name}>
-                <div className="provider-proposal-person">
-                  <div className="provider-client-avatar">{proposal.name[0]}</div>
-                  <div>
-                    <h3>{proposal.name}</h3>
-                    <p>{proposal.role}</p>
+              {propostas.map(proposal => (
+                <article className="provider-proposal-card" key={proposal.id}>
+                  <div className="provider-proposal-person">
+                    <div className="provider-client-avatar">
+                      {proposal.clienteNome ? proposal.clienteNome[0].toUpperCase() : 'C'}
+                    </div>
+                    <div>
+                      <h3>{proposal.clienteNome}</h3>
+                      <p>{proposal.clienteEmail}</p>
+                    </div>
                   </div>
-                </div>
-                <p>{proposal.title}</p>
-                <strong>{proposal.price}</strong>
-                <div>
-                  <button><Check size={14} /> Aceitar</button>
-                  <button className="ghost"><X size={14} /> Recusar</button>
-                </div>
-              </article>
-            ))}
+                  <p>Contratação de serviço: {proposal.horas} horas solicitadas.</p>
+                  <strong>
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(proposal.valorTotal)}
+                  </strong>
+                  <div>
+                    <button><Check size={14} /> Aceitar</button>
+                    <button className="ghost"><X size={14} /> Recusar</button>
+                  </div>
+                </article>
+              ))}
 
-            <button className="provider-marketplace-card">
-              <Plus size={20} />
-              <span>Procurando mais oportunidades?</span>
-              <strong>Explorar Marketplace</strong>
-            </button>
-          </aside>
+              <button className="provider-marketplace-card">
+                <Plus size={20} />
+                <span>Procurando mais oportunidades?</span>
+                <strong>Explorar Marketplace</strong>
+              </button>
+            </aside>
+          )}
         </div>
       </main>
     </div>

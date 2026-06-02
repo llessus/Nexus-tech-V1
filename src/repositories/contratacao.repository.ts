@@ -43,6 +43,11 @@ export const criarContratacao = async (
   return toContratacao(inserted[0]);
 };
 
+export interface ContratacaoComCliente extends Contratacao {
+  clienteNome: string;
+  clienteEmail: string;
+}
+
 export const listarContratacoesPorCliente = async (clienteId: number): Promise<ContratacaoComTalento[]> => {
   const sql = getSQL();
 
@@ -59,5 +64,23 @@ export const listarContratacoesPorCliente = async (clienteId: number): Promise<C
     talentoNome: row.talento_nome,
     talentoRole: row.talento_role,
     talentoAvatarUrl: row.talento_avatar_url,
+  }));
+};
+
+export const listarContratacoesPorTalento = async (talentoId: number): Promise<ContratacaoComCliente[]> => {
+  const sql = getSQL();
+
+  const rows = await sql`
+    SELECT c.*, u.nome as cliente_nome, u.email as cliente_email
+    FROM contratacoes c
+    JOIN usuarios u ON c.cliente_id = u.id
+    WHERE c.talento_id = ${talentoId}
+    ORDER BY c.id DESC
+  `;
+
+  return rows.map(row => ({
+    ...toContratacao(row),
+    clienteNome: row.cliente_nome,
+    clienteEmail: row.cliente_email,
   }));
 };
