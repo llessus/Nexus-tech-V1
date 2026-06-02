@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { criarTalentoDto, atualizarTalentoDto } from '../src/dtos/talento.dto';
-import * as talentoRepository from '../src/repositories/talento.repository';
+import { criarTalentoDto, atualizarTalentoDto } from '../src/dtos/talento.dto.js';
+import * as talentoRepository from '../src/repositories/talento.repository.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url || '';

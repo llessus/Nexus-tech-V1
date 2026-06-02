@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { loginDto, registrarUsuarioDto } from '../src/dtos/auth.dto';
-import * as usuarioRepository from '../src/repositories/usuario.repository';
-import { validarSenha, criarHashSenha } from '../src/utils/password';
+import { loginDto, registrarUsuarioDto } from '../src/dtos/auth.dto.js';
+import * as usuarioRepository from '../src/repositories/usuario.repository.js';
+import { validarSenha, criarHashSenha } from '../src/utils/password.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url || '';

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { criarServicoDto, atualizarServicoDto } from '../src/dtos/servico.dto';
-import * as servicoRepository from '../src/repositories/servico.repository';
+import { criarServicoDto, atualizarServicoDto } from '../src/dtos/servico.dto.js';
+import * as servicoRepository from '../src/repositories/servico.repository.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url || '';

@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { criarProdutoDto, atualizarProdutoDto } from '../src/dtos/produto.dto';
-import * as produtoRepository from '../src/repositories/produto.repository';
+import { criarProdutoDto, atualizarProdutoDto } from '../src/dtos/produto.dto.js';
+import * as produtoRepository from '../src/repositories/produto.repository.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url || '';

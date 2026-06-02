@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { criarMensagemDto } from '../src/dtos/mensagem.dto';
-import * as mensagemRepository from '../src/repositories/mensagem.repository';
+import { criarMensagemDto } from '../src/dtos/mensagem.dto.js';
+import * as mensagemRepository from '../src/repositories/mensagem.repository.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const url = req.url || '';
