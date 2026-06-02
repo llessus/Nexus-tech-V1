@@ -1,4 +1,4 @@
-import { db } from '../database/client';
+import { getSQL } from '../database/client';
 import { CriarProdutoDto, AtualizarProdutoDto } from '../dtos/produto.dto';
 
 export interface Produto {
@@ -12,58 +12,59 @@ export interface Produto {
 const toProduto = (row: any): Produto => ({
   id: row.id,
   nome: row.nome,
-  preco: row.preco,
+  preco: Number(row.preco),
   descricao: row.descricao,
   imagemUrl: row.imagem_url,
 });
 
-export const listarProdutos = (nome?: string): Produto[] => {
+export const listarProdutos = async (nome?: string): Promise<Produto[]> => {
+  const sql = getSQL();
+
   if (nome) {
-    const rows = db.prepare(
-      'SELECT id, nome, preco, descricao, imagem_url FROM produtos WHERE nome LIKE ? ORDER BY id'
-    ).all(`%${nome}%`);
+    const rows = await sql`
+      SELECT id, nome, preco, descricao, imagem_url FROM produtos
+      WHERE nome ILIKE ${'%' + nome + '%'} ORDER BY id
+    `;
     return rows.map(toProduto);
   }
 
-  const rows = db.prepare(
-    'SELECT id, nome, preco, descricao, imagem_url FROM produtos ORDER BY id'
-  ).all();
+  const rows = await sql`SELECT id, nome, preco, descricao, imagem_url FROM produtos ORDER BY id`;
   return rows.map(toProduto);
 };
 
-export const obterProdutoPorId = (id: number): Produto | null => {
-  const row = db.prepare(
-    'SELECT id, nome, preco, descricao, imagem_url FROM produtos WHERE id = ?'
-  ).get(id) as any;
-
-  return row ? toProduto(row) : null;
+export const obterProdutoPorId = async (id: number): Promise<Produto | null> => {
+  const sql = getSQL();
+  const rows = await sql`SELECT id, nome, preco, descricao, imagem_url FROM produtos WHERE id = ${id}`;
+  return rows.length > 0 ? toProduto(rows[0]) : null;
 };
 
-export const criarProduto = (produto: CriarProdutoDto): Produto => {
-  const result = db.prepare(
-    'INSERT INTO produtos (nome, preco, descricao, imagem_url) VALUES (?, ?, ?, ?)'
-  ).run(produto.nome, produto.preco, produto.descricao ?? null, produto.imagemUrl ?? null);
+export const criarProduto = async (produto: CriarProdutoDto): Promise<Produto> => {
+  const sql = getSQL();
 
-  return {
-    id: Number(result.lastInsertRowid),
-    nome: produto.nome,
-    preco: produto.preco,
-    descricao: produto.descricao ?? null,
-    imagemUrl: produto.imagemUrl ?? null,
-  };
+  const inserted = await sql`
+    INSERT INTO produtos (nome, preco, descricao, imagem_url)
+    VALUES (${produto.nome}, ${produto.preco}, ${produto.descricao ?? null}, ${produto.imagemUrl ?? null})
+    RETURNING id, nome, preco, descricao, imagem_url
+  `;
+
+  return toProduto(inserted[0]);
 };
 
-export const substituirProduto = (id: number, produto: CriarProdutoDto): Produto | null => {
-  const result = db.prepare(
-    'UPDATE produtos SET nome = ?, preco = ?, descricao = ?, imagem_url = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(produto.nome, produto.preco, produto.descricao ?? null, produto.imagemUrl ?? null, id);
+export const substituirProduto = async (id: number, produto: CriarProdutoDto): Promise<Produto | null> => {
+  const sql = getSQL();
 
-  if (result.changes === 0) return null;
-  return obterProdutoPorId(id);
+  const updated = await sql`
+    UPDATE produtos SET nome = ${produto.nome}, preco = ${produto.preco},
+           descricao = ${produto.descricao ?? null}, imagem_url = ${produto.imagemUrl ?? null}, updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING id, nome, preco, descricao, imagem_url
+  `;
+
+  return updated.length > 0 ? toProduto(updated[0]) : null;
 };
 
-export const atualizarProduto = (id: number, produto: AtualizarProdutoDto): Produto | null => {
-  const existente = obterProdutoPorId(id);
+export const atualizarProduto = async (id: number, produto: AtualizarProdutoDto): Promise<Produto | null> => {
+  const existente = await obterProdutoPorId(id);
   if (!existente) return null;
 
   const nome = produto.nome ?? existente.nome;
@@ -71,14 +72,19 @@ export const atualizarProduto = (id: number, produto: AtualizarProdutoDto): Prod
   const descricao = produto.descricao ?? existente.descricao;
   const imagemUrl = produto.imagemUrl ?? existente.imagemUrl;
 
-  db.prepare(
-    'UPDATE produtos SET nome = ?, preco = ?, descricao = ?, imagem_url = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(nome, preco, descricao ?? null, imagemUrl ?? null, id);
+  const sql = getSQL();
+  const updated = await sql`
+    UPDATE produtos SET nome = ${nome}, preco = ${preco},
+           descricao = ${descricao ?? null}, imagem_url = ${imagemUrl ?? null}, updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING id, nome, preco, descricao, imagem_url
+  `;
 
-  return obterProdutoPorId(id);
+  return updated.length > 0 ? toProduto(updated[0]) : null;
 };
 
-export const removerProduto = (id: number): boolean => {
-  const result = db.prepare('DELETE FROM produtos WHERE id = ?').run(id);
-  return result.changes > 0;
+export const removerProduto = async (id: number): Promise<boolean> => {
+  const sql = getSQL();
+  const result = await sql`DELETE FROM produtos WHERE id = ${id} RETURNING id`;
+  return result.length > 0;
 };

@@ -1,7 +1,6 @@
 import { CriarProdutoDto, AtualizarProdutoDto } from '../dtos/produto.dto';
 
-// Para simplificar, assumimos que a API está rodando localmente na porta 3000
-const API_URL = 'http://localhost:3000/produtos';
+const API_URL = '/api/produtos';
 
 export interface Produto {
   id: number;

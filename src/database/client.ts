@@ -1,10 +1,9 @@
-import Database from 'better-sqlite3';
-import { resolve } from 'node:path';
+import { neon } from '@neondatabase/serverless';
 
-const dbPath = resolve(process.cwd(), 'nexus.db');
-
-export const db = new Database(dbPath);
-
-// Habilita WAL mode para melhor performance
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+export function getSQL() {
+  const databaseUrl = process.env.DATABASE_URL;
+  if (!databaseUrl) {
+    throw new Error('DATABASE_URL não está definida nas variáveis de ambiente.');
+  }
+  return neon(databaseUrl);
+}

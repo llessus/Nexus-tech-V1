@@ -1,4 +1,4 @@
-import { db } from '../database/client';
+import { getSQL } from '../database/client';
 import { RegistrarUsuarioDto } from '../dtos/auth.dto';
 
 export interface Usuario {
@@ -24,47 +24,52 @@ const toUsuarioComSenha = (row: any): UsuarioComSenha => ({
   senhaHash: row.senha_hash,
 });
 
-export const listarUsuarios = (): Usuario[] => {
-  const rows = db.prepare(
-    'SELECT id, nome, email, tipo_conta FROM usuarios ORDER BY id'
-  ).all();
-
+export const listarUsuarios = async (): Promise<Usuario[]> => {
+  const sql = getSQL();
+  const rows = await sql`SELECT id, nome, email, tipo_conta FROM usuarios ORDER BY id`;
   return rows.map(toUsuario);
 };
 
-export const buscarUsuarioPorEmail = (email: string): UsuarioComSenha | null => {
-  const row = db.prepare(
-    'SELECT id, nome, email, senha_hash, tipo_conta FROM usuarios WHERE email = ? LIMIT 1'
-  ).get(email.toLowerCase()) as any;
-
-  return row ? toUsuarioComSenha(row) : null;
+export const buscarUsuarioPorEmail = async (email: string): Promise<UsuarioComSenha | null> => {
+  const sql = getSQL();
+  const rows = await sql`
+    SELECT id, nome, email, senha_hash, tipo_conta 
+    FROM usuarios WHERE email = ${email.toLowerCase()} LIMIT 1
+  `;
+  return rows.length > 0 ? toUsuarioComSenha(rows[0]) : null;
 };
 
-export const criarUsuario = (
+export const criarUsuario = async (
   usuario: RegistrarUsuarioDto,
   senhaHash: string
-): Usuario => {
-  const result = db.prepare(
-    'INSERT INTO usuarios (nome, email, senha_hash, tipo_conta) VALUES (?, ?, ?, ?)'
-  ).run(usuario.nome, usuario.email.toLowerCase(), senhaHash, usuario.tipoConta);
+): Promise<Usuario> => {
+  const sql = getSQL();
+
+  const inserted = await sql`
+    INSERT INTO usuarios (nome, email, senha_hash, tipo_conta)
+    VALUES (${usuario.nome}, ${usuario.email.toLowerCase()}, ${senhaHash}, ${usuario.tipoConta})
+    RETURNING id
+  `;
+
+  const userId = inserted[0].id;
 
   if (usuario.tipoConta === 'prestador') {
-    const userId = Number(result.lastInsertRowid);
-    db.prepare(
-      'INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, usuario_id) VALUES (?, ?, ?, ?, ?, ?, ?)'
-    ).run(
-      usuario.nome,
-      usuario.email.toLowerCase(),
-      'Prestador de Serviços Tech',
-      120.0,
-      JSON.stringify(['TypeScript', 'React', 'Node.js']),
-      'Desenvolvedor de software focado em entregar soluções de alto nível.',
-      userId
-    );
+    await sql`
+      INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, usuario_id)
+      VALUES (
+        ${usuario.nome},
+        ${usuario.email.toLowerCase()},
+        'Prestador de Serviços Tech',
+        120.0,
+        ${JSON.stringify(['TypeScript', 'React', 'Node.js'])},
+        'Desenvolvedor de software focado em entregar soluções de alto nível.',
+        ${userId}
+      )
+    `;
   }
 
   return {
-    id: Number(result.lastInsertRowid),
+    id: userId,
     nome: usuario.nome,
     email: usuario.email.toLowerCase(),
     tipoConta: usuario.tipoConta,

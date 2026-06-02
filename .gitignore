@@ -1,7 +1,9 @@
 node_modules/
 .env
+.env.local
 nexus.db
 nexus.db-wal
 nexus.db-shm
 dist/
 .vscode/
+.vercel/

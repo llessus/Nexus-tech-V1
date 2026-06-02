@@ -1,11 +1,11 @@
-const API_URL = 'http://localhost:3000/mensagens';
+const API_URL = '/api/mensagens';
 
 export interface Mensagem {
   id: number;
   remetenteId: number;
   destinatarioId: number;
   conteudo: string;
-  lida: number;
+  lida: boolean;
   createdAt: string;
 }
 

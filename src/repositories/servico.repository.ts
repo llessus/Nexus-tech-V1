@@ -1,4 +1,4 @@
-import { db } from '../database/client';
+import { getSQL } from '../database/client';
 import { criarServicoDto, atualizarServicoDto } from '../dtos/servico.dto';
 import { z } from 'zod';
 
@@ -18,54 +18,57 @@ const toServico = (row: any): Servico => ({
   id: row.id,
   titulo: row.titulo,
   descricao: row.descricao,
-  preco: row.preco,
+  preco: Number(row.preco),
   talentoId: row.talento_id,
   imagemUrl: row.imagem_url,
 });
 
-export const listarServicos = (titulo?: string): Servico[] => {
+export const listarServicos = async (titulo?: string): Promise<Servico[]> => {
+  const sql = getSQL();
+
   if (titulo) {
-    const rows = db.prepare(
-      'SELECT * FROM servicos WHERE titulo LIKE ? ORDER BY id'
-    ).all(`%${titulo}%`);
+    const rows = await sql`SELECT * FROM servicos WHERE titulo ILIKE ${'%' + titulo + '%'} ORDER BY id`;
     return rows.map(toServico);
   }
 
-  const rows = db.prepare('SELECT * FROM servicos ORDER BY id').all();
+  const rows = await sql`SELECT * FROM servicos ORDER BY id`;
   return rows.map(toServico);
 };
 
-export const obterServicoPorId = (id: number): Servico | null => {
-  const row = db.prepare('SELECT * FROM servicos WHERE id = ?').get(id) as any;
-  return row ? toServico(row) : null;
+export const obterServicoPorId = async (id: number): Promise<Servico | null> => {
+  const sql = getSQL();
+  const rows = await sql`SELECT * FROM servicos WHERE id = ${id}`;
+  return rows.length > 0 ? toServico(rows[0]) : null;
 };
 
-export const criarServico = (servico: CriarServicoDto): Servico => {
-  const result = db.prepare(
-    'INSERT INTO servicos (titulo, descricao, preco, talento_id, imagem_url) VALUES (?, ?, ?, ?, ?)'
-  ).run(servico.titulo, servico.descricao, servico.preco, servico.talentoId, servico.imagemUrl ?? null);
+export const criarServico = async (servico: CriarServicoDto): Promise<Servico> => {
+  const sql = getSQL();
 
-  return {
-    id: Number(result.lastInsertRowid),
-    titulo: servico.titulo,
-    descricao: servico.descricao,
-    preco: servico.preco,
-    talentoId: servico.talentoId,
-    imagemUrl: servico.imagemUrl ?? null,
-  };
+  const inserted = await sql`
+    INSERT INTO servicos (titulo, descricao, preco, talento_id, imagem_url)
+    VALUES (${servico.titulo}, ${servico.descricao}, ${servico.preco}, ${servico.talentoId}, ${servico.imagemUrl ?? null})
+    RETURNING *
+  `;
+
+  return toServico(inserted[0]);
 };
 
-export const substituirServico = (id: number, servico: CriarServicoDto): Servico | null => {
-  const result = db.prepare(
-    'UPDATE servicos SET titulo = ?, descricao = ?, preco = ?, talento_id = ?, imagem_url = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(servico.titulo, servico.descricao, servico.preco, servico.talentoId, servico.imagemUrl ?? null, id);
+export const substituirServico = async (id: number, servico: CriarServicoDto): Promise<Servico | null> => {
+  const sql = getSQL();
 
-  if (result.changes === 0) return null;
-  return obterServicoPorId(id);
+  const updated = await sql`
+    UPDATE servicos SET titulo = ${servico.titulo}, descricao = ${servico.descricao},
+           preco = ${servico.preco}, talento_id = ${servico.talentoId},
+           imagem_url = ${servico.imagemUrl ?? null}, updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+
+  return updated.length > 0 ? toServico(updated[0]) : null;
 };
 
-export const atualizarServico = (id: number, servico: AtualizarServicoDto): Servico | null => {
-  const existente = obterServicoPorId(id);
+export const atualizarServico = async (id: number, servico: AtualizarServicoDto): Promise<Servico | null> => {
+  const existente = await obterServicoPorId(id);
   if (!existente) return null;
 
   const titulo = servico.titulo ?? existente.titulo;
@@ -74,14 +77,20 @@ export const atualizarServico = (id: number, servico: AtualizarServicoDto): Serv
   const talentoId = servico.talentoId ?? existente.talentoId;
   const imagemUrl = servico.imagemUrl ?? existente.imagemUrl;
 
-  db.prepare(
-    'UPDATE servicos SET titulo = ?, descricao = ?, preco = ?, talento_id = ?, imagem_url = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(titulo, descricao, preco, talentoId, imagemUrl ?? null, id);
+  const sql = getSQL();
+  const updated = await sql`
+    UPDATE servicos SET titulo = ${titulo}, descricao = ${descricao},
+           preco = ${preco}, talento_id = ${talentoId},
+           imagem_url = ${imagemUrl ?? null}, updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
 
-  return obterServicoPorId(id);
+  return updated.length > 0 ? toServico(updated[0]) : null;
 };
 
-export const removerServico = (id: number): boolean => {
-  const result = db.prepare('DELETE FROM servicos WHERE id = ?').run(id);
-  return result.changes > 0;
+export const removerServico = async (id: number): Promise<boolean> => {
+  const sql = getSQL();
+  const result = await sql`DELETE FROM servicos WHERE id = ${id} RETURNING id`;
+  return result.length > 0;
 };

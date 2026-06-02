@@ -1,5 +1,4 @@
-// Para simplificar, assumimos que a API está rodando localmente na porta 3000
-const API_URL = 'http://localhost:3000/talentos';
+const API_URL = '/api/talentos';
 
 export interface Talento {
   id: number;

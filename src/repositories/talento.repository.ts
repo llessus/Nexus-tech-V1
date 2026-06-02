@@ -1,4 +1,4 @@
-import { db } from '../database/client';
+import { getSQL } from '../database/client';
 import { criarTalentoDto, atualizarTalentoDto } from '../dtos/talento.dto';
 import { z } from 'zod';
 
@@ -22,75 +22,60 @@ const toTalento = (row: any): Talento => ({
   nome: row.nome,
   email: row.email,
   role: row.role,
-  hourlyRate: row.hourly_rate,
-  skills: JSON.parse(row.skills || '[]'),
+  hourlyRate: Number(row.hourly_rate),
+  skills: typeof row.skills === 'string' ? JSON.parse(row.skills || '[]') : (row.skills || []),
   bio: row.bio,
   avatarUrl: row.avatar_url,
   usuarioId: row.usuario_id,
 });
 
-export const listarTalentos = (nome?: string): Talento[] => {
+export const listarTalentos = async (nome?: string): Promise<Talento[]> => {
+  const sql = getSQL();
+
   if (nome) {
-    const rows = db.prepare(
-      'SELECT * FROM talentos WHERE nome LIKE ? ORDER BY id'
-    ).all(`%${nome}%`);
+    const rows = await sql`SELECT * FROM talentos WHERE nome ILIKE ${'%' + nome + '%'} ORDER BY id`;
     return rows.map(toTalento);
   }
 
-  const rows = db.prepare('SELECT * FROM talentos ORDER BY id').all();
+  const rows = await sql`SELECT * FROM talentos ORDER BY id`;
   return rows.map(toTalento);
 };
 
-export const obterTalentoPorId = (id: number): Talento | null => {
-  const row = db.prepare('SELECT * FROM talentos WHERE id = ?').get(id) as any;
-  return row ? toTalento(row) : null;
+export const obterTalentoPorId = async (id: number): Promise<Talento | null> => {
+  const sql = getSQL();
+  const rows = await sql`SELECT * FROM talentos WHERE id = ${id}`;
+  return rows.length > 0 ? toTalento(rows[0]) : null;
 };
 
-export const criarTalento = (talento: CriarTalentoDto): Talento => {
-  const result = db.prepare(
-    'INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)'
-  ).run(
-    talento.nome,
-    talento.email,
-    talento.role,
-    talento.hourlyRate,
-    JSON.stringify(talento.skills),
-    talento.bio ?? null,
-    talento.avatarUrl ?? null
-  );
+export const criarTalento = async (talento: CriarTalentoDto): Promise<Talento> => {
+  const sql = getSQL();
 
-  return {
-    id: Number(result.lastInsertRowid),
-    nome: talento.nome,
-    email: talento.email,
-    role: talento.role,
-    hourlyRate: talento.hourlyRate,
-    skills: talento.skills,
-    bio: talento.bio ?? null,
-    avatarUrl: talento.avatarUrl ?? null,
-  };
+  const inserted = await sql`
+    INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, avatar_url)
+    VALUES (${talento.nome}, ${talento.email}, ${talento.role}, ${talento.hourlyRate},
+            ${JSON.stringify(talento.skills)}, ${talento.bio ?? null}, ${talento.avatarUrl ?? null})
+    RETURNING *
+  `;
+
+  return toTalento(inserted[0]);
 };
 
-export const substituirTalento = (id: number, talento: CriarTalentoDto): Talento | null => {
-  const result = db.prepare(
-    'UPDATE talentos SET nome = ?, email = ?, role = ?, hourly_rate = ?, skills = ?, bio = ?, avatar_url = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(
-    talento.nome,
-    talento.email,
-    talento.role,
-    talento.hourlyRate,
-    JSON.stringify(talento.skills),
-    talento.bio ?? null,
-    talento.avatarUrl ?? null,
-    id
-  );
+export const substituirTalento = async (id: number, talento: CriarTalentoDto): Promise<Talento | null> => {
+  const sql = getSQL();
 
-  if (result.changes === 0) return null;
-  return obterTalentoPorId(id);
+  const updated = await sql`
+    UPDATE talentos SET nome = ${talento.nome}, email = ${talento.email}, role = ${talento.role},
+           hourly_rate = ${talento.hourlyRate}, skills = ${JSON.stringify(talento.skills)},
+           bio = ${talento.bio ?? null}, avatar_url = ${talento.avatarUrl ?? null}, updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
+
+  return updated.length > 0 ? toTalento(updated[0]) : null;
 };
 
-export const atualizarTalento = (id: number, talento: AtualizarTalentoDto): Talento | null => {
-  const existente = obterTalentoPorId(id);
+export const atualizarTalento = async (id: number, talento: AtualizarTalentoDto): Promise<Talento | null> => {
+  const existente = await obterTalentoPorId(id);
   if (!existente) return null;
 
   const nome = talento.nome ?? existente.nome;
@@ -101,14 +86,20 @@ export const atualizarTalento = (id: number, talento: AtualizarTalentoDto): Tale
   const bio = talento.bio ?? existente.bio;
   const avatarUrl = talento.avatarUrl ?? existente.avatarUrl;
 
-  db.prepare(
-    'UPDATE talentos SET nome = ?, email = ?, role = ?, hourly_rate = ?, skills = ?, bio = ?, avatar_url = ?, updated_at = datetime(\'now\') WHERE id = ?'
-  ).run(nome, email, role, hourlyRate, JSON.stringify(skills), bio ?? null, avatarUrl ?? null, id);
+  const sql = getSQL();
+  const updated = await sql`
+    UPDATE talentos SET nome = ${nome}, email = ${email}, role = ${role},
+           hourly_rate = ${hourlyRate}, skills = ${JSON.stringify(skills)},
+           bio = ${bio ?? null}, avatar_url = ${avatarUrl ?? null}, updated_at = NOW()
+    WHERE id = ${id}
+    RETURNING *
+  `;
 
-  return obterTalentoPorId(id);
+  return updated.length > 0 ? toTalento(updated[0]) : null;
 };
 
-export const removerTalento = (id: number): boolean => {
-  const result = db.prepare('DELETE FROM talentos WHERE id = ?').run(id);
-  return result.changes > 0;
+export const removerTalento = async (id: number): Promise<boolean> => {
+  const sql = getSQL();
+  const result = await sql`DELETE FROM talentos WHERE id = ${id} RETURNING id`;
+  return result.length > 0;
 };

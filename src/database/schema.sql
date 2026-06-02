@@ -1,46 +1,46 @@
 CREATE TABLE IF NOT EXISTS usuarios (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   nome TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   senha_hash TEXT NOT NULL,
   tipo_conta TEXT NOT NULL CHECK (tipo_conta IN ('cliente', 'prestador', 'admin')),
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS talentos (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   nome TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   role TEXT NOT NULL,
-  hourly_rate REAL NOT NULL CHECK (hourly_rate > 0),
+  hourly_rate NUMERIC(10,2) NOT NULL CHECK (hourly_rate > 0),
   skills TEXT NOT NULL DEFAULT '[]',
   bio TEXT,
   avatar_url TEXT,
   usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS produtos (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   nome TEXT NOT NULL,
-  preco REAL NOT NULL CHECK (preco > 0),
+  preco NUMERIC(10,2) NOT NULL CHECK (preco > 0),
   descricao TEXT,
   imagem_url TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS servicos (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   titulo TEXT NOT NULL,
   descricao TEXT NOT NULL,
-  preco REAL NOT NULL CHECK (preco > 0),
+  preco NUMERIC(10,2) NOT NULL CHECK (preco > 0),
   talento_id INTEGER NOT NULL REFERENCES talentos(id) ON DELETE CASCADE,
   imagem_url TEXT,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_produtos_nome ON produtos (nome);
@@ -51,25 +51,25 @@ CREATE INDEX IF NOT EXISTS idx_servicos_titulo ON servicos (titulo);
 CREATE INDEX IF NOT EXISTS idx_servicos_talento_id ON servicos (talento_id);
 
 CREATE TABLE IF NOT EXISTS contratacoes (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   cliente_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   talento_id INTEGER NOT NULL REFERENCES talentos(id) ON DELETE CASCADE,
   horas INTEGER NOT NULL,
-  valor_total REAL NOT NULL,
+  valor_total NUMERIC(10,2) NOT NULL,
   status TEXT NOT NULL DEFAULT 'Confirmado',
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_contratacoes_cliente_id ON contratacoes (cliente_id);
 CREATE INDEX IF NOT EXISTS idx_contratacoes_talento_id ON contratacoes (talento_id);
 
 CREATE TABLE IF NOT EXISTS mensagens (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  id SERIAL PRIMARY KEY,
   remetente_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   destinatario_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
   conteudo TEXT NOT NULL,
-  lida INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  lida BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_mensagens_remetente ON mensagens (remetente_id);

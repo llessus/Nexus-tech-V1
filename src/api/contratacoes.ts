@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/contratacoes';
+const API_URL = '/api/contratacoes';
 
 export interface Contratacao {
   id: number;

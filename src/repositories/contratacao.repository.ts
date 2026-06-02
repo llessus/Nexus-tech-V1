@@ -1,4 +1,4 @@
-import { db } from '../database/client';
+import { getSQL } from '../database/client';
 
 export interface Contratacao {
   id: number;
@@ -21,33 +21,38 @@ const toContratacao = (row: any): Contratacao => ({
   clienteId: row.cliente_id,
   talentoId: row.talento_id,
   horas: row.horas,
-  valorTotal: row.valor_total,
+  valorTotal: Number(row.valor_total),
   status: row.status,
   createdAt: row.created_at,
 });
 
-export const criarContratacao = (
+export const criarContratacao = async (
   clienteId: number,
   talentoId: number,
   horas: number,
   valorTotal: number
-): Contratacao => {
-  const result = db.prepare(
-    'INSERT INTO contratacoes (cliente_id, talento_id, horas, valor_total) VALUES (?, ?, ?, ?)'
-  ).run(clienteId, talentoId, horas, valorTotal);
+): Promise<Contratacao> => {
+  const sql = getSQL();
 
-  const inserted = db.prepare('SELECT * FROM contratacoes WHERE id = ?').get(result.lastInsertRowid) as any;
-  return toContratacao(inserted);
+  const inserted = await sql`
+    INSERT INTO contratacoes (cliente_id, talento_id, horas, valor_total)
+    VALUES (${clienteId}, ${talentoId}, ${horas}, ${valorTotal})
+    RETURNING *
+  `;
+
+  return toContratacao(inserted[0]);
 };
 
-export const listarContratacoesPorCliente = (clienteId: number): ContratacaoComTalento[] => {
-  const rows = db.prepare(`
+export const listarContratacoesPorCliente = async (clienteId: number): Promise<ContratacaoComTalento[]> => {
+  const sql = getSQL();
+
+  const rows = await sql`
     SELECT c.*, t.nome as talento_nome, t.role as talento_role, t.avatar_url as talento_avatar_url
     FROM contratacoes c
     JOIN talentos t ON c.talento_id = t.id
-    WHERE c.cliente_id = ?
+    WHERE c.cliente_id = ${clienteId}
     ORDER BY c.id DESC
-  `).all(clienteId) as any[];
+  `;
 
   return rows.map(row => ({
     ...toContratacao(row),

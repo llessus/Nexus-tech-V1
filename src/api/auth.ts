@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:3000/auth';
+const API_URL = '/api/auth';
 
 export type TipoConta = 'cliente' | 'prestador' | 'admin';
 
