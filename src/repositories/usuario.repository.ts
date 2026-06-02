@@ -1,5 +1,5 @@
-import { getSQL } from '../database/client';
-import { RegistrarUsuarioDto } from '../dtos/auth.dto';
+import { getSQL } from '../database/client.js';
+import { RegistrarUsuarioDto } from '../dtos/auth.dto.js';
 
 export interface Usuario {
   id: number;

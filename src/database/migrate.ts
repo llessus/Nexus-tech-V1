@@ -1,5 +1,5 @@
-import { getSQL } from './client';
-import { criarHashSenha } from '../utils/password';
+import { getSQL } from './client.js';
+import { criarHashSenha } from '../utils/password.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS usuarios (

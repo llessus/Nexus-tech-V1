@@ -1,5 +1,5 @@
-import { getSQL } from '../database/client';
-import { CriarProdutoDto, AtualizarProdutoDto } from '../dtos/produto.dto';
+import { getSQL } from '../database/client.js';
+import { CriarProdutoDto, AtualizarProdutoDto } from '../dtos/produto.dto.js';
 
 export interface Produto {
   id: number;

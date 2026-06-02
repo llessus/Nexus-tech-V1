@@ -1,4 +1,4 @@
-import { getSQL } from '../database/client';
+import { getSQL } from '../database/client.js';
 
 export interface Mensagem {
   id: number;

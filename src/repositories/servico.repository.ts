@@ -1,5 +1,5 @@
-import { getSQL } from '../database/client';
-import { criarServicoDto, atualizarServicoDto } from '../dtos/servico.dto';
+import { getSQL } from '../database/client.js';
+import { criarServicoDto, atualizarServicoDto } from '../dtos/servico.dto.js';
 import { z } from 'zod';
 
 type CriarServicoDto = z.infer<typeof criarServicoDto>;
