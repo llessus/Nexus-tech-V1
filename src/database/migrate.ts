@@ -84,8 +84,11 @@ CREATE INDEX IF NOT EXISTS idx_mensagens_conversa ON mensagens (remetente_id, de
 export async function runMigration() {
   const sql = getSQL();
 
-  // Executa o schema (cria tabelas)
-  await sql([SCHEMA] as unknown as TemplateStringsArray);
+  // Executa o schema (cria tabelas) de forma sequencial
+  const statements = SCHEMA.split(';').map(s => s.trim()).filter(Boolean);
+  for (const statement of statements) {
+    await sql([statement] as unknown as TemplateStringsArray);
+  }
 
   // Seed: insere o usuário inicial se ainda não existir
   const existingUsers = await sql`SELECT id FROM usuarios WHERE email = 'brendon@gmail.com'`;
