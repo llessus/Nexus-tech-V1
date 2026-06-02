@@ -87,7 +87,7 @@ export async function runMigration() {
   // Executa o schema (cria tabelas) de forma sequencial
   const statements = SCHEMA.split(';').map(s => s.trim()).filter(Boolean);
   for (const statement of statements) {
-    await sql([statement] as unknown as TemplateStringsArray);
+    await sql.query(statement);
   }
 
   // Seed: insere o usuário inicial se ainda não existir
