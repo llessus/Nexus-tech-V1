@@ -9,6 +9,8 @@ import ProviderDashboardPage from './pages/ProviderDashboardPage';
 import TalentProfilePage from './pages/TalentProfilePage';
 import HireTalentPage from './pages/HireTalentPage';
 import SettingsPage from './pages/SettingsPage';
+import ClientProfilePage from './pages/ClientProfilePage';
+import ProfileRedirect from './pages/ProfileRedirect';
 import ChatPage from './pages/ChatPage';
 import { ProdutosDemo } from './components/ProdutosDemo';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -50,6 +52,22 @@ const App: React.FC = () => {
           element={
             <ProtectedRoute>
               <TalentProfilePage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/client/:id" 
+          element={
+            <ProtectedRoute>
+              <ClientProfilePage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <ProfileRedirect />
             </ProtectedRoute>
           } 
         />

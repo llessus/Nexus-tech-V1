@@ -102,3 +102,12 @@ export const atualizarPerfil = async (
   localStorage.setItem('nexus:user', JSON.stringify(data.usuario));
   return data.usuario;
 };
+
+export const obterUsuarioPorId = async (id: number): Promise<UsuarioLogado> => {
+  const response = await fetch(`${API_URL}/usuario?id=${id}`);
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.erro || 'Falha ao buscar usuário');
+  }
+  return data.usuario;
+};

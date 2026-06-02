@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, LogOut, Save, UserCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/Topbar';
-import { getUsuarioLogado, logout, atualizarPerfil } from '../api/auth';
+import { getUsuarioLogado, logout, atualizarPerfil } from '../api/auth.js';
+import { obterTalentoPorUsuarioId, atualizarTalento } from '../api/talentos.js';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
@@ -10,15 +11,48 @@ const SettingsPage: React.FC = () => {
   const usuario = getUsuarioLogado();
   const [activeTab, setActiveTab] = useState('perfil');
 
+  // Basic User states
   const [nome, setNome] = useState(usuario?.nome ?? '');
+  const [avatarUrl, setAvatarUrl] = useState(usuario?.avatarUrl ?? null);
+  const [uploading, setUploading] = useState(false);
+  const [salvo, setSalvo] = useState(false);
+
+  // Provider-specific states
+  const [talentoId, setTalentoId] = useState<number | null>(null);
   const [ocupacao, setOcupacao] = useState('');
   const [bio, setBio] = useState('');
+  const [hourlyRate, setHourlyRate] = useState<number>(100);
+  const [skills, setSkills] = useState('');
+  const [portfolioImages, setPortfolioImages] = useState<string[]>([]);
   const [linkedin, setLinkedin] = useState('');
   const [github, setGithub] = useState('');
   const [portfolio, setPortfolio] = useState('');
-  const [salvo, setSalvo] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState(usuario?.avatarUrl ?? null);
-  const [uploading, setUploading] = useState(false);
+  const [loadingTalento, setLoadingTalento] = useState(false);
+  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    const carregarTalento = async () => {
+      if (usuario && usuario.tipoConta === 'prestador') {
+        setLoadingTalento(true);
+        try {
+          const talento = await obterTalentoPorUsuarioId(usuario.id);
+          if (talento) {
+            setTalentoId(talento.id);
+            setOcupacao(talento.role || '');
+            setBio(talento.bio || '');
+            setHourlyRate(talento.hourlyRate || 100);
+            setSkills(talento.skills ? talento.skills.join(', ') : '');
+            setPortfolioImages(talento.portfolioImages || []);
+          }
+        } catch (err) {
+          console.error('Erro ao buscar dados de talento:', err);
+        } finally {
+          setLoadingTalento(false);
+        }
+      }
+    };
+    carregarTalento();
+  }, [usuario?.id]);
 
   if (!usuario) {
     navigate('/login');
@@ -50,9 +84,58 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handlePortfolioUpload = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingIndex(index);
+    try {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro no upload.');
+      }
+
+      const data = await response.json();
+      const novasFotos = [...portfolioImages];
+      novasFotos[index] = data.url;
+      setPortfolioImages(novasFotos);
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao carregar imagem do portfólio.');
+    } finally {
+      setUploadingIndex(null);
+    }
+  };
+
+  const getPortfolioImage = (index: number): string => {
+    return portfolioImages[index] || '';
+  };
+
   const handleSalvar = async () => {
     try {
+      // 1. Atualizar perfil de usuário (nome, avatar)
       await atualizarPerfil(usuario.id, nome, avatarUrl);
+
+      // 2. Se for prestador, atualizar perfil de talento (role, bio, valor hora, habilidades, portfólio)
+      if (usuario.tipoConta === 'prestador' && talentoId) {
+        const skillsArray = skills
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        await atualizarTalento(talentoId, {
+          role: ocupacao,
+          bio: bio,
+          hourlyRate: Number(hourlyRate),
+          skills: skillsArray,
+          portfolioImages: portfolioImages.filter(Boolean),
+        });
+      }
+
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2000);
     } catch (err) {
@@ -66,7 +149,6 @@ const SettingsPage: React.FC = () => {
     navigate('/login');
   };
 
-  // Gera iniciais do nome para o avatar
   const iniciais = nome
     .split(' ')
     .slice(0, 2)
@@ -97,7 +179,7 @@ const SettingsPage: React.FC = () => {
               className={`settings-menu-item ${activeTab === 'perfil' ? 'active' : ''}`}
               onClick={() => setActiveTab('perfil')}
             >
-              Perfil Público
+              {usuario.tipoConta === 'prestador' ? 'Perfil do Prestador' : 'Perfil do Cliente'}
             </button>
             <button 
               className={`settings-menu-item ${activeTab === 'conta' ? 'active' : ''}`}
@@ -153,6 +235,23 @@ const SettingsPage: React.FC = () => {
                     <h3>{nome}</h3>
                     <p>{tipoLabel} · {usuario.email}</p>
                     {uploading && <small style={{ color: '#00e5ff' }}>Enviando imagem...</small>}
+                    <button 
+                      type="button" 
+                      onClick={() => navigate('/profile')} 
+                      style={{ 
+                        background: 'rgba(0, 229, 255, 0.1)', 
+                        border: '1px solid rgba(0, 229, 255, 0.3)', 
+                        color: '#00e5ff', 
+                        padding: '0.3rem 0.75rem', 
+                        borderRadius: '0.25rem', 
+                        fontSize: '11px', 
+                        cursor: 'pointer', 
+                        marginTop: '0.5rem',
+                        fontWeight: 600
+                      }}
+                    >
+                      Visualizar Perfil
+                    </button>
                   </div>
                   <button
                     type="button"
@@ -174,61 +273,147 @@ const SettingsPage: React.FC = () => {
                       onChange={(e) => setNome(e.target.value)}
                     />
                   </div>
-                  <div className="settings-form-group">
-                    <label className="settings-label">Ocupação Profissional</label>
-                    <input
-                      type="text"
-                      className="settings-input"
-                      value={ocupacao}
-                      onChange={(e) => setOcupacao(e.target.value)}
-                      placeholder="Ex: Full Stack Developer"
-                    />
-                  </div>
-                  
-                  <div className="settings-form-group full-width">
-                    <label className="settings-label">Biografia</label>
-                    <textarea
-                      className="settings-textarea"
-                      value={bio}
-                      onChange={(e) => setBio(e.target.value)}
-                      placeholder="Conte um pouco sobre você e sua experiência..."
-                    ></textarea>
-                  </div>
+
+                  {usuario.tipoConta === 'prestador' && (
+                    <>
+                      {loadingTalento ? (
+                        <p style={{ color: '#a1a1aa', fontSize: '13px' }}>Carregando dados de prestador...</p>
+                      ) : (
+                        <>
+                          <div className="settings-form-group">
+                            <label className="settings-label">Ocupação Profissional</label>
+                            <input
+                              type="text"
+                              className="settings-input"
+                              value={ocupacao}
+                              onChange={(e) => setOcupacao(e.target.value)}
+                              placeholder="Ex: Full Stack Developer"
+                            />
+                          </div>
+
+                          <div className="settings-form-group">
+                            <label className="settings-label">Valor Hora (R$/h)</label>
+                            <input
+                              type="number"
+                              className="settings-input"
+                              value={hourlyRate}
+                              onChange={(e) => setHourlyRate(Number(e.target.value))}
+                              placeholder="Ex: 150"
+                            />
+                          </div>
+
+                          <div className="settings-form-group">
+                            <label className="settings-label">Habilidades (Separadas por vírgula)</label>
+                            <input
+                              type="text"
+                              className="settings-input"
+                              value={skills}
+                              onChange={(e) => setSkills(e.target.value)}
+                              placeholder="React, Node.js, PostgreSQL"
+                            />
+                          </div>
+
+                          <div className="settings-form-group full-width">
+                            <label className="settings-label">Biografia</label>
+                            <textarea
+                              className="settings-textarea"
+                              value={bio}
+                              onChange={(e) => setBio(e.target.value)}
+                              placeholder="Conte um pouco sobre você e sua experiência..."
+                            ></textarea>
+                          </div>
+
+                          <div className="settings-form-group full-width">
+                            <label className="settings-label" style={{ marginBottom: '0.2rem' }}>Imagens do Portfólio (Máximo 3)</label>
+                            <p style={{ color: '#71717a', fontSize: '12px', margin: '0 0 0.5rem' }}>Carregue fotos de projetos para exibir no seu perfil de prestador.</p>
+                            
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem' }}>
+                              {[0, 1, 2].map((idx) => {
+                                const img = getPortfolioImage(idx);
+                                return (
+                                  <div 
+                                    key={idx} 
+                                    style={{ 
+                                      height: '140px', 
+                                      border: '1px dashed rgba(255, 255, 255, 0.15)', 
+                                      borderRadius: '8px', 
+                                      overflow: 'hidden', 
+                                      cursor: 'pointer', 
+                                      position: 'relative',
+                                      background: '#121212',
+                                      display: 'grid',
+                                      placeItems: 'center'
+                                    }}
+                                    onClick={() => document.getElementById(`portfolio-upload-${idx}`)?.click()}
+                                  >
+                                    {img ? (
+                                      <img src={img} alt={`Projeto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    ) : (
+                                      <div style={{ textAlign: 'center', padding: '1rem', color: '#71717a' }}>
+                                        <Camera size={20} style={{ margin: '0 auto 0.5rem' }} />
+                                        <span style={{ fontSize: '11px', display: 'block' }}>Projeto {idx + 1}</span>
+                                      </div>
+                                    )}
+                                    {uploadingIndex === idx && (
+                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'grid', placeItems: 'center', color: '#00e5ff', fontSize: '11px' }}>
+                                        Enviando...
+                                      </div>
+                                    )}
+                                    <input 
+                                      type="file"
+                                      id={`portfolio-upload-${idx}`}
+                                      accept="image/*"
+                                      style={{ display: 'none' }}
+                                      onChange={(e) => handlePortfolioUpload(e, idx)}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )}
                 </div>
 
-                <h3 className="settings-section-title">Links Sociais</h3>
-                <div className="settings-form-grid">
-                  <div className="settings-form-group">
-                    <label className="settings-label">LinkedIn</label>
-                    <input
-                      type="text"
-                      className="settings-input"
-                      value={linkedin}
-                      onChange={(e) => setLinkedin(e.target.value)}
-                      placeholder="linkedin.com/in/seu-perfil"
-                    />
-                  </div>
-                  <div className="settings-form-group">
-                    <label className="settings-label">GitHub</label>
-                    <input
-                      type="text"
-                      className="settings-input"
-                      value={github}
-                      onChange={(e) => setGithub(e.target.value)}
-                      placeholder="github.com/seu-usuario"
-                    />
-                  </div>
-                  <div className="settings-form-group full-width">
-                    <label className="settings-label">Portfólio URL</label>
-                    <input
-                      type="text"
-                      className="settings-input"
-                      value={portfolio}
-                      onChange={(e) => setPortfolio(e.target.value)}
-                      placeholder="https://seu-portfolio.com"
-                    />
-                  </div>
-                </div>
+                {usuario.tipoConta === 'prestador' && !loadingTalento && (
+                  <>
+                    <h3 className="settings-section-title" style={{ marginTop: '2.5rem' }}>Links Sociais</h3>
+                    <div className="settings-form-grid">
+                      <div className="settings-form-group">
+                        <label className="settings-label">LinkedIn</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={linkedin}
+                          onChange={(e) => setLinkedin(e.target.value)}
+                          placeholder="linkedin.com/in/seu-perfil"
+                        />
+                      </div>
+                      <div className="settings-form-group">
+                        <label className="settings-label">GitHub</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={github}
+                          onChange={(e) => setGithub(e.target.value)}
+                          placeholder="github.com/seu-usuario"
+                        />
+                      </div>
+                      <div className="settings-form-group full-width">
+                        <label className="settings-label">Portfólio URL</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={portfolio}
+                          onChange={(e) => setPortfolio(e.target.value)}
+                          placeholder="https://seu-portfolio.com"
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
                   {salvo && <span className="settings-saved-msg">✓ Salvo com sucesso!</span>}
@@ -236,6 +421,7 @@ const SettingsPage: React.FC = () => {
                     className="auth-submit-btn"
                     style={{ width: 'auto', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: 0 }}
                     onClick={handleSalvar}
+                    disabled={uploading || uploadingIndex !== null}
                   >
                     <Save size={18} />
                     Salvar Alterações

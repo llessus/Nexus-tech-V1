@@ -3,11 +3,17 @@ import {
   MapPin, 
   Globe, 
   CheckCircle,
-  Star
+  Star,
+  Camera,
+  Save,
+  X,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Topbar from '../components/Topbar';
-import { obterTalentoPorId, Talento } from '../api/talentos';
+import { obterTalentoPorId, atualizarTalento, Talento } from '../api/talentos';
+import { getUsuarioLogado, atualizarPerfil } from '../api/auth';
 import './TalentProfilePage.css';
 import './DashboardPage.css'; // Reusing topbar styles
 
@@ -17,11 +23,36 @@ const TalentProfilePage: React.FC = () => {
   const [talent, setTalent] = useState<Talento | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Logged-in user checks
+  const usuarioLogado = getUsuarioLogado();
+  const isOwner = usuarioLogado && talent && (usuarioLogado.id === talent.usuarioId || usuarioLogado.email === talent.email);
+
+  // Inline edit states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editNome, setEditNome] = useState('');
+  const [editRole, setEditRole] = useState('');
+  const [editHourlyRate, setEditHourlyRate] = useState<number>(100);
+  const [editSkills, setEditSkills] = useState('');
+  const [editBio, setEditBio] = useState('');
+  const [editAvatarUrl, setEditAvatarUrl] = useState<string | null>(null);
+  const [editPortfolioImages, setEditPortfolioImages] = useState<string[]>([]);
+  
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [uploadingPortfolioIdx, setUploadingPortfolioIdx] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     if (!id) return;
     obterTalentoPorId(Number(id))
       .then(data => {
         setTalent(data);
+        setEditNome(data.nome);
+        setEditRole(data.role);
+        setEditHourlyRate(data.hourlyRate);
+        setEditSkills(data.skills ? data.skills.join(', ') : '');
+        setEditBio(data.bio || '');
+        setEditAvatarUrl(data.avatarUrl || null);
+        setEditPortfolioImages(data.portfolioImages || []);
         setLoading(false);
       })
       .catch(err => {
@@ -29,6 +60,126 @@ const TalentProfilePage: React.FC = () => {
         setLoading(false);
       });
   }, [id]);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingAvatar(true);
+    try {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha no upload do avatar');
+      }
+
+      const data = await response.json();
+      setEditAvatarUrl(data.url);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao fazer upload da imagem.');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handlePortfolioChange = async (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingPortfolioIdx(idx);
+    try {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha no upload do portfólio');
+      }
+
+      const data = await response.json();
+      const newImages = [...editPortfolioImages];
+      newImages[idx] = data.url;
+      setEditPortfolioImages(newImages);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao fazer upload da imagem.');
+    } finally {
+      setUploadingPortfolioIdx(null);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!talent) return;
+    if (!editNome.trim()) {
+      alert('O nome não pode estar vazio.');
+      return;
+    }
+    if (!editRole.trim()) {
+      alert('A ocupação não pode estar vazia.');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // 1. Atualizar perfil básico (usuário)
+      if (talent.usuarioId) {
+        await atualizarPerfil(talent.usuarioId, editNome, editAvatarUrl);
+      }
+
+      // 2. Atualizar detalhes do talento
+      const skillsArray = editSkills
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+
+      const updated = await atualizarTalento(talent.id, {
+        nome: editNome,
+        role: editRole,
+        hourlyRate: Number(editHourlyRate),
+        skills: skillsArray,
+        bio: editBio,
+        avatarUrl: editAvatarUrl,
+        portfolioImages: editPortfolioImages.filter(Boolean)
+      });
+
+      if (updated) {
+        setTalent(updated);
+        setEditNome(updated.nome);
+        setEditRole(updated.role);
+        setEditHourlyRate(updated.hourlyRate);
+        setEditSkills(updated.skills ? updated.skills.join(', ') : '');
+        setEditBio(updated.bio || '');
+        setEditAvatarUrl(updated.avatarUrl || null);
+        setEditPortfolioImages(updated.portfolioImages || []);
+      }
+
+      setIsEditing(false);
+      // Notificar outros componentes (Topbar)
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      console.error(err);
+      alert('Falha ao salvar as alterações do perfil.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!talent) return;
+    setEditNome(talent.nome);
+    setEditRole(talent.role);
+    setEditHourlyRate(talent.hourlyRate);
+    setEditSkills(talent.skills ? talent.skills.join(', ') : '');
+    setEditBio(talent.bio || '');
+    setEditAvatarUrl(talent.avatarUrl || null);
+    setEditPortfolioImages(talent.portfolioImages || []);
+    setIsEditing(false);
+  };
 
   if (loading) {
     return (
@@ -70,10 +221,35 @@ const TalentProfilePage: React.FC = () => {
         <div className="profile-header-card">
           <div className="profile-header-left">
             <div className="profile-avatar-wrapper">
-              <img 
-                src={talent.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=300&auto=format&fit=crop"} 
-                alt={talent.nome} 
-                className="profile-avatar"
+              {isEditing ? (
+                <div 
+                  className="profile-avatar-edit-trigger"
+                  onClick={() => document.getElementById('avatar-file-input')?.click()}
+                  style={{ cursor: 'pointer', width: '100%', height: '100%' }}
+                >
+                  <img 
+                    src={editAvatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=300&auto=format&fit=crop"} 
+                    alt={editNome} 
+                    className="profile-avatar"
+                  />
+                  <div className="profile-avatar-overlay">
+                    <Camera size={20} />
+                  </div>
+                </div>
+              ) : (
+                <img 
+                  src={talent.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=300&auto=format&fit=crop"} 
+                  alt={talent.nome} 
+                  className="profile-avatar"
+                />
+              )}
+              <input 
+                type="file" 
+                id="avatar-file-input" 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+                onChange={handleAvatarChange} 
+                disabled={uploadingAvatar} 
               />
               <div className="profile-verified-badge">
                 <CheckCircle size={16} />
@@ -81,9 +257,31 @@ const TalentProfilePage: React.FC = () => {
             </div>
             
             <div className="profile-info">
-              <h1>{talent.nome}</h1>
-              <div className="profile-level-tag">NÍVEL ESPECIALISTA</div>
-              <div className="profile-role">{talent.role}</div>
+              {isEditing ? (
+                <div className="profile-edit-header-inputs">
+                  <input 
+                    type="text" 
+                    value={editNome} 
+                    onChange={e => setEditNome(e.target.value)} 
+                    className="profile-inline-input name-input"
+                    placeholder="Nome"
+                  />
+                  <input 
+                    type="text" 
+                    value={editRole} 
+                    onChange={e => setEditRole(e.target.value)} 
+                    className="profile-inline-input role-input"
+                    placeholder="Ocupação"
+                  />
+                  {uploadingAvatar && <small style={{ color: '#00e5ff', display: 'block', marginTop: '0.25rem' }}>Carregando avatar...</small>}
+                </div>
+              ) : (
+                <>
+                  <h1>{talent.nome}</h1>
+                  <div className="profile-level-tag">NÍVEL ESPECIALISTA</div>
+                  <div className="profile-role">{talent.role}</div>
+                </>
+              )}
               
               <div className="profile-meta">
                 <div className="profile-meta-item">
@@ -97,13 +295,32 @@ const TalentProfilePage: React.FC = () => {
           </div>
 
           <div className="profile-actions">
-            <button 
-              className="btn-outline"
-              onClick={() => navigate(`/chat?talentoId=${talent.id}`)}
-            >
-              Enviar Mensagem
-            </button>
-            <button className="btn-cyan" onClick={() => navigate(`/hire/${talent.id}`)}>Contratar Talento</button>
+            {isOwner ? (
+              isEditing ? (
+                <>
+                  <button className="btn-outline" onClick={handleCancel} disabled={saving}>
+                    <X size={16} /> Cancelar
+                  </button>
+                  <button className="btn-cyan" onClick={handleSave} disabled={saving || uploadingAvatar || uploadingPortfolioIdx !== null}>
+                    <Save size={16} /> {saving ? 'Salvando...' : 'Salvar'}
+                  </button>
+                </>
+              ) : (
+                <button className="btn-cyan" onClick={() => setIsEditing(true)}>
+                  Editar Perfil
+                </button>
+              )
+            ) : (
+              <>
+                <button 
+                  className="btn-outline"
+                  onClick={() => navigate(`/chat?talentoId=${talent.id}`)}
+                >
+                  Enviar Mensagem
+                </button>
+                <button className="btn-cyan" onClick={() => navigate(`/hire/${talent.id}`)}>Contratar Talento</button>
+              </>
+            )}
           </div>
         </div>
 
@@ -152,40 +369,125 @@ const TalentProfilePage: React.FC = () => {
           <div>
             <div className="profile-section-title">Sobre Mim</div>
             <div className="profile-about-text">
-              <p>{talent.bio || `Olá! Sou ${talent.nome}, especialista na área de ${talent.role}. Foco em trazer soluções com alta performance e agilidade para acelerar produtos digitais.`}</p>
+              {isEditing ? (
+                <textarea 
+                  value={editBio} 
+                  onChange={e => setEditBio(e.target.value)} 
+                  className="profile-inline-textarea"
+                  placeholder="Escreva sua bio ou apresentação..."
+                  rows={6}
+                />
+              ) : (
+                <p>{talent.bio || 'Sem biografia definida.'}</p>
+              )}
             </div>
 
             <div className="profile-portfolio-header">
               <div className="profile-section-title" style={{margin: 0, border: 'none'}}>Portfólio</div>
-              <a href="#" className="profile-portfolio-link">Ver Todos os Projetos</a>
+              {!isEditing && talent.portfolioImages && talent.portfolioImages.length > 0 && (
+                <span className="profile-portfolio-subtitle">Projetos Principais</span>
+              )}
             </div>
 
-            <div className="profile-portfolio-grid">
-              <div className="profile-portfolio-item">
-                <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop" alt="Project 1" />
+            {isEditing ? (
+              <div className="profile-portfolio-edit-grid">
+                {[0, 1, 2].map((idx) => {
+                  const img = editPortfolioImages[idx];
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`profile-portfolio-upload-box ${idx === 2 ? 'large' : ''}`}
+                      onClick={() => document.getElementById(`portfolio-file-${idx}`)?.click()}
+                    >
+                      {img ? (
+                        <img src={img} alt={`Projeto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div className="upload-box-placeholder">
+                          <Camera size={24} />
+                          <span>Projeto {idx + 1}</span>
+                        </div>
+                      )}
+                      {uploadingPortfolioIdx === idx && (
+                        <div className="upload-box-loading">
+                          Carregando...
+                        </div>
+                      )}
+                      <input 
+                        type="file" 
+                        id={`portfolio-file-${idx}`} 
+                        accept="image/*" 
+                        style={{ display: 'none' }} 
+                        onChange={e => handlePortfolioChange(e, idx)} 
+                      />
+                    </div>
+                  );
+                })}
               </div>
-              <div className="profile-portfolio-item">
-                <img src="https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800&auto=format&fit=crop" alt="Project 2" />
+            ) : (
+              <div className="profile-portfolio-grid">
+                {talent.portfolioImages && talent.portfolioImages.length > 0 ? (
+                  talent.portfolioImages.map((imgUrl, idx) => (
+                    <div key={idx} className={`profile-portfolio-item ${idx === 2 ? 'large' : ''}`}>
+                      <img src={imgUrl} alt={`Projeto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    </div>
+                  ))
+                ) : (
+                  <div className="profile-portfolio-empty">
+                    Nenhum projeto cadastrado no portfólio.
+                  </div>
+                )}
               </div>
-              <div className="profile-portfolio-item large">
-                <img src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop" alt="Project 3" />
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column */}
           <div>
             <div className="profile-sidebar-card">
               <div className="profile-sidebar-title">Habilidades</div>
-              <div className="profile-skills-tags">
-                {talent.skills.map(skill => (
-                  <span key={skill} className="profile-skill-tag">{skill}</span>
-                ))}
-              </div>
+              
+              {isEditing ? (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <input 
+                    type="text" 
+                    value={editSkills} 
+                    onChange={e => setEditSkills(e.target.value)} 
+                    className="profile-inline-input"
+                    placeholder="React, Node.js, TypeScript"
+                    style={{ width: '100%' }}
+                  />
+                  <small style={{ color: '#71717a', fontSize: '11px', marginTop: '0.25rem', display: 'block' }}>
+                    Separe as habilidades por vírgula.
+                  </small>
+                </div>
+              ) : (
+                <div className="profile-skills-tags">
+                  {talent.skills && talent.skills.length > 0 ? (
+                    talent.skills.map(skill => (
+                      <span key={skill} className="profile-skill-tag">{skill}</span>
+                    ))
+                  ) : (
+                    <span style={{ color: '#71717a', fontSize: '13px' }}>Nenhuma habilidade listada.</span>
+                  )}
+                </div>
+              )}
 
-              <div className="profile-info-row">
+              <div className="profile-info-row" style={{ marginTop: '1.5rem' }}>
                 <span className="profile-info-label">Valor Hora</span>
-                <span className="profile-info-value">R$ {talent.hourlyRate}/h</span>
+                {isEditing ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: '#a1a1aa', fontSize: '14px' }}>R$</span>
+                    <input 
+                      type="number" 
+                      value={editHourlyRate} 
+                      onChange={e => setEditHourlyRate(Number(e.target.value))} 
+                      className="profile-inline-input"
+                      style={{ width: '80px', textAlign: 'right' }}
+                    />
+                    <span style={{ color: '#a1a1aa', fontSize: '14px' }}>/h</span>
+                  </div>
+                ) : (
+                  <span className="profile-info-value">R$ {talent.hourlyRate}/h</span>
+                )}
               </div>
               <div className="profile-info-row">
                 <span className="profile-info-label">Disponibilidade</span>
@@ -197,34 +499,7 @@ const TalentProfilePage: React.FC = () => {
               </div>
             </div>
 
-            <div className="profile-sidebar-card">
-              <div className="profile-sidebar-title">Formação Acadêmica</div>
-              <div className="profile-timeline">
-                <div className="profile-timeline-item">
-                  <div className="profile-timeline-title">Especialização Avançada</div>
-                  <div className="profile-timeline-subtitle">Nexus Academy</div>
-                  <div className="profile-timeline-date">2022 - 2023</div>
-                </div>
-                <div className="profile-timeline-item" style={{marginBottom: 0}}>
-                  <div className="profile-timeline-title">Tecnologia da Informação</div>
-                  <div className="profile-timeline-subtitle">Universidade Parceira</div>
-                  <div className="profile-timeline-date">2018 - 2021</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="profile-sidebar-card profile-testimonial">
-              <div className="profile-test-user">
-                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=100&auto=format&fit=crop" alt="Marcos V." className="profile-test-avatar" />
-                <div>
-                  <div className="profile-test-name">Marcos V.</div>
-                  <div className="profile-test-role">CTO @ CyberSystems</div>
-                </div>
-              </div>
-              <div className="profile-test-quote">
-                "{talent.nome.split(' ')[0]} superou as expectativas do nosso time de produto. Entrega profissional extremamente no prazo e com maestria técnica."
-              </div>
-            </div>
+            {/* Testimonials and education were mocked, removed as requested */}
           </div>
         </div>
       </main>

@@ -365,3 +365,136 @@
   font-style: italic;
   line-height: 1.6;
 }
+
+/* Inline Editing Styles */
+.profile-avatar-edit-trigger {
+  position: relative;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: grid;
+  place-items: center;
+  color: #00e5ff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.profile-avatar-edit-trigger:hover .profile-avatar-overlay {
+  opacity: 1;
+}
+
+.profile-edit-header-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-inline-input {
+  background: rgba(31, 41, 55, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.95rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.profile-inline-input:focus {
+  border-color: #00e5ff;
+}
+
+.profile-inline-input.name-input {
+  font-size: 1.8rem;
+  font-weight: 800;
+}
+
+.profile-inline-input.role-input {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #00e5ff;
+}
+
+.profile-inline-textarea {
+  background: rgba(31, 41, 55, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  font-size: 0.95rem;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.profile-inline-textarea:focus {
+  border-color: #00e5ff;
+}
+
+/* Portfolio Edit Grid */
+.profile-portfolio-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.profile-portfolio-upload-box {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+  border: 2px dashed rgba(255, 255, 255, 0.2);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: #111;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.profile-portfolio-upload-box:hover {
+  border-color: #00e5ff;
+  background: #151515;
+}
+
+.profile-portfolio-upload-box.large {
+  grid-column: span 2;
+  aspect-ratio: 21/9;
+}
+
+.upload-box-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: #71717a;
+}
+
+.profile-portfolio-upload-box:hover .upload-box-placeholder {
+  color: #00e5ff;
+}
+
+.upload-box-loading {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: grid;
+  place-items: center;
+  color: #00e5ff;
+  font-size: 0.85rem;
+}
+
+.profile-portfolio-empty {
+  grid-column: span 2;
+  text-align: center;
+  padding: 3rem;
+  border: 1px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  color: #71717a;
+  font-size: 0.9rem;
+}

@@ -15,6 +15,7 @@ export interface Talento {
   bio?: string | null;
   avatarUrl?: string | null;
   usuarioId?: number | null;
+  portfolioImages?: string[];
 }
 
 const toTalento = (row: any): Talento => ({
@@ -27,6 +28,7 @@ const toTalento = (row: any): Talento => ({
   bio: row.bio,
   avatarUrl: row.avatar_url,
   usuarioId: row.usuario_id,
+  portfolioImages: typeof row.portfolio_images === 'string' ? JSON.parse(row.portfolio_images || '[]') : (row.portfolio_images || []),
 });
 
 export const listarTalentos = async (nome?: string): Promise<Talento[]> => {
@@ -51,9 +53,10 @@ export const criarTalento = async (talento: CriarTalentoDto): Promise<Talento> =
   const sql = getSQL();
 
   const inserted = await sql`
-    INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, avatar_url)
+    INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, avatar_url, portfolio_images)
     VALUES (${talento.nome}, ${talento.email}, ${talento.role}, ${talento.hourlyRate},
-            ${JSON.stringify(talento.skills)}, ${talento.bio ?? null}, ${talento.avatarUrl ?? null})
+            ${JSON.stringify(talento.skills)}, ${talento.bio ?? null}, ${talento.avatarUrl ?? null},
+            ${JSON.stringify(talento.portfolioImages || [])})
     RETURNING *
   `;
 
@@ -66,7 +69,8 @@ export const substituirTalento = async (id: number, talento: CriarTalentoDto): P
   const updated = await sql`
     UPDATE talentos SET nome = ${talento.nome}, email = ${talento.email}, role = ${talento.role},
            hourly_rate = ${talento.hourlyRate}, skills = ${JSON.stringify(talento.skills)},
-           bio = ${talento.bio ?? null}, avatar_url = ${talento.avatarUrl ?? null}, updated_at = NOW()
+           bio = ${talento.bio ?? null}, avatar_url = ${talento.avatarUrl ?? null},
+           portfolio_images = ${JSON.stringify(talento.portfolioImages || [])}, updated_at = NOW()
     WHERE id = ${id}
     RETURNING *
   `;
@@ -85,12 +89,14 @@ export const atualizarTalento = async (id: number, talento: AtualizarTalentoDto)
   const skills = talento.skills ?? existente.skills;
   const bio = talento.bio ?? existente.bio;
   const avatarUrl = talento.avatarUrl ?? existente.avatarUrl;
+  const portfolioImages = talento.portfolioImages ?? existente.portfolioImages ?? [];
 
   const sql = getSQL();
   const updated = await sql`
     UPDATE talentos SET nome = ${nome}, email = ${email}, role = ${role},
            hourly_rate = ${hourlyRate}, skills = ${JSON.stringify(skills)},
-           bio = ${bio ?? null}, avatar_url = ${avatarUrl ?? null}, updated_at = NOW()
+           bio = ${bio ?? null}, avatar_url = ${avatarUrl ?? null},
+           portfolio_images = ${JSON.stringify(portfolioImages)}, updated_at = NOW()
     WHERE id = ${id}
     RETURNING *
   `;

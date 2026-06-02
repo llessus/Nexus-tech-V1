@@ -66,6 +66,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error(erro);
       return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
     }
+  } else if (path.endsWith('/usuario') && req.method === 'GET') {
+    const idStr = req.query.id;
+    if (!idStr) {
+      return res.status(400).json({ erro: 'O ID do usuário é obrigatório.' });
+    }
+    const id = Number(idStr);
+    if (isNaN(id)) {
+      return res.status(400).json({ erro: 'O ID deve ser um número válido.' });
+    }
+    try {
+      const usuario = await usuarioRepository.buscarUsuarioPorId(id);
+      if (!usuario) {
+        return res.status(404).json({ erro: 'Usuário não encontrado.' });
+      }
+      return res.json({ usuario });
+    } catch (erro) {
+      console.error(erro);
+      return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+    }
   } else {
     return res.status(404).json({ erro: 'Rota não encontrada.' });
   }

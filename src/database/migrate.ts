@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS talentos (
   bio TEXT,
   avatar_url TEXT,
   usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE,
+  portfolio_images TEXT NOT NULL DEFAULT '[]',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -96,6 +97,13 @@ export async function runMigration() {
     await sql.query('ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS avatar_url TEXT');
   } catch (err) {
     console.error('Erro ao adicionar coluna avatar_url na tabela usuarios:', err);
+  }
+
+  // Garante que a coluna portfolio_images exista na tabela talentos
+  try {
+    await sql.query("ALTER TABLE talentos ADD COLUMN IF NOT EXISTS portfolio_images TEXT NOT NULL DEFAULT '[]'");
+  } catch (err) {
+    console.error('Erro ao adicionar coluna portfolio_images na tabela talentos:', err);
   }
 
   // Seed: insere o usuário inicial se ainda não existir

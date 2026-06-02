@@ -124,7 +124,7 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
         {usuario ? (
           <div 
             className="dash-avatar-iniciais" 
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/profile')}
             style={{ cursor: 'pointer', padding: 0, overflow: 'hidden' }}
           >
             {usuario.avatarUrl ? (
@@ -138,7 +138,7 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
             src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=100&auto=format&fit=crop" 
             alt="User Avatar" 
             className="dash-avatar" 
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/profile')}
             style={{ cursor: 'pointer' }}
           />
         )}

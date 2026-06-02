@@ -6,8 +6,9 @@ export const criarTalentoDto = z.object({
   role: z.string().min(1, 'A ocupação (role) é obrigatória'),
   hourlyRate: z.number().positive('O valor hora deve ser positivo'),
   skills: z.array(z.string()).min(1, 'Deve ter pelo menos uma habilidade'),
-  bio: z.string().optional(),
-  avatarUrl: z.string().url('A URL do avatar deve ser válida.').optional()
+  bio: z.string().optional().nullable(),
+  avatarUrl: z.string().url('A URL do avatar deve ser válida.').optional().nullable(),
+  portfolioImages: z.array(z.string()).optional()
 });
 
 export const atualizarTalentoDto = criarTalentoDto.partial();

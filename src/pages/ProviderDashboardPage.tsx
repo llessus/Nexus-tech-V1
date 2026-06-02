@@ -120,7 +120,7 @@ const ProviderDashboardPage: React.FC = () => {
         <div className="provider-profile">
           <div 
             className="provider-avatar"
-            onClick={() => navigate('/settings')}
+            onClick={() => navigate('/profile')}
             style={{ cursor: 'pointer', overflow: 'hidden' }}
           >
             {usuario?.avatarUrl ? (
@@ -153,7 +153,7 @@ const ProviderDashboardPage: React.FC = () => {
             <button aria-label="Mensagens"><Mail size={18} /></button>
             <div 
               className="provider-small-avatar"
-              onClick={() => navigate('/settings')}
+              onClick={() => navigate('/profile')}
               style={{ cursor: 'pointer', overflow: 'hidden' }}
             >
               {usuario?.avatarUrl ? (

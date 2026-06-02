@@ -106,3 +106,12 @@ export const atualizarUsuario = async (
 
   return toUsuario(updated[0]);
 };
+
+export const buscarUsuarioPorId = async (id: number): Promise<Usuario | null> => {
+  const sql = getSQL();
+  const rows = await sql`
+    SELECT id, nome, email, tipo_conta, avatar_url 
+    FROM usuarios WHERE id = ${id} LIMIT 1
+  `;
+  return rows.length > 0 ? toUsuario(rows[0]) : null;
+};

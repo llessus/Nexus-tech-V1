@@ -10,6 +10,7 @@ export interface Talento {
   bio?: string | null;
   avatarUrl?: string | null;
   usuarioId?: number | null;
+  portfolioImages?: string[];
 }
 
 // GET: Listar talentos, opcionalmente filtrando por nome
@@ -42,4 +43,21 @@ export const obterTalentoPorUsuarioId = async (usuarioId: number): Promise<Talen
   }
   
   return response.json();
+};
+
+export const atualizarTalento = async (id: number, payload: Partial<Talento>): Promise<Talento> => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.erro || 'Falha ao atualizar perfil de talento');
+  }
+  
+  return data;
 };
