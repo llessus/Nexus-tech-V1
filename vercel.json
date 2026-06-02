@@ -1,6 +1,18 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/api/auth/(.*)", "destination": "/api/auth.ts" },
+    { "source": "/api/produtos", "destination": "/api/produtos.ts" },
+    { "source": "/api/produtos/(.*)", "destination": "/api/produtos.ts" },
+    { "source": "/api/talentos", "destination": "/api/talentos.ts" },
+    { "source": "/api/talentos/(.*)", "destination": "/api/talentos.ts" },
+    { "source": "/api/servicos", "destination": "/api/servicos.ts" },
+    { "source": "/api/servicos/(.*)", "destination": "/api/servicos.ts" },
+    { "source": "/api/contratacoes", "destination": "/api/contratacoes.ts" },
+    { "source": "/api/contratacoes/(.*)", "destination": "/api/contratacoes.ts" },
+    { "source": "/api/mensagens", "destination": "/api/mensagens.ts" },
+    { "source": "/api/mensagens/(.*)", "destination": "/api/mensagens.ts" },
+    { "source": "/api/upload", "destination": "/api/upload.ts" },
+    { "source": "/api/db-migrate", "destination": "/api/db-migrate.ts" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
