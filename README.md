@@ -118,25 +118,5 @@ A API expõe as seguintes rotas base:
   * `POST /api/contratacoes` - Registrar nova contratação
   * `GET /api/contratacoes` - Histórico de serviços contratados
 
----
 
-## ⚠️ Instruções Críticas para Entrega (.ZIP)
 
-> [!CAUTION]
-> **NUNCA ENVIE A PASTA `node_modules` NO ARQUIVO .ZIP!**
-> Enviar a pasta `node_modules` causará um **desconto de 40% na nota** final do projeto.
-
-### Como gerar o arquivo `.zip` da forma correta:
-
-#### No Windows (PowerShell):
-Se você estiver utilizando Windows, você pode criar o arquivo zip excluindo a pasta `node_modules` rodando este comando no terminal da pasta raiz do projeto:
-```powershell
-Compress-Archive -Path (Get-ChildItem -Path . -Exclude "node_modules", ".git") -DestinationPath "Nexus-Tech-Entrega.zip" -Force
-```
-
-#### No macOS ou Linux (Terminal):
-```bash
-zip -r Nexus-Tech-Entrega.zip . -x "node_modules/*" -x ".git/*"
-```
-
-O arquivo `Nexus-Tech-Entrega.zip` gerado conterá apenas o seu código fonte e poderá ser compartilhado com segurança.
