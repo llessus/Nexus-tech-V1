@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <!-- Cyan to Purple Neon Gradient -->
+    <linearGradient id="neonGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#4facfe" />
+    </linearGradient>
+    <!-- Deep background shadow -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  <!-- Background Circle (Dark Navy) -->
+  <rect width="128" height="128" rx="28" fill="#030712" />
+  
+  <!-- Outer glowing ring -->
+  <circle cx="64" cy="64" r="54" fill="none" stroke="url(#neonGrad)" stroke-width="3" opacity="0.4" stroke-dasharray="8 6" />
+
+  <!-- Rocket Path (Sleek modern rocket) -->
+  <g transform="translate(8, 8) scale(0.88)" filter="url(#glow)">
+    <!-- Propulsion flame / trails -->
+    <path d="M46 86 L50 102 L54 86 Z" fill="#ff4b2b" opacity="0.8" />
+    <path d="M51 86 L56 110 L61 86 Z" fill="#ffb400" />
+    <path d="M58 86 L62 102 L66 86 Z" fill="#ff4b2b" opacity="0.8" />
+    
+    <!-- Left Wing -->
+    <path d="M36 68 L22 86 L38 86 Z" fill="url(#neonGrad)" opacity="0.8" />
+    
+    <!-- Right Wing -->
+    <path d="M76 68 L90 86 L74 86 Z" fill="url(#neonGrad)" opacity="0.8" />
+    
+    <!-- Rocket Body -->
+    <path d="M56 16 C 56 16, 68 36, 68 64 C 68 76, 64 86, 64 86 L 48 86 C 48 86, 44 76, 44 64 C 44 36, 56 16, 56 16 Z" fill="url(#neonGrad)" />
+    
+    <!-- Window / Cockpit -->
+    <circle cx="56" cy="48" r="7" fill="#030712" />
+    <circle cx="56" cy="48" r="4" fill="#ffffff" opacity="0.9" />
+  </g>
+</svg>
