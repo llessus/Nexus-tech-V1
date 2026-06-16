@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { 
   CreditCard, Lock, ShieldCheck, Check, ArrowLeft, 
-  Building, Smartphone, ChevronDown
+  Building, Smartphone
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { obterTalentoPorId, Talento } from '../api/talentos';

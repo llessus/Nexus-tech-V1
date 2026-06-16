@@ -8,7 +8,6 @@ import {
   Send,
   X,
   CheckCircle2,
-  Search,
   FileText,
   Check
 } from 'lucide-react';

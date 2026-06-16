@@ -7,12 +7,11 @@ import {
   Camera,
   Save,
   X,
-  Sparkles,
-  BookOpen,
   Linkedin,
   Github,
   Instagram
 } from 'lucide-react';
+
 
 import { useNavigate, useParams } from 'react-router-dom';
 import Topbar from '../components/Topbar';
@@ -271,9 +270,9 @@ const TalentProfilePage: React.FC = () => {
 
   // Simular notas consistentes por ID
   const rating = 4.8 + (talent.id % 3) * 0.1;
-  const location = talent.id % 2 === 0 ? "Remoto" : "São Paulo";
   const numReviews = 45 + (talent.id * 13) % 80;
   const numCompletedProjects = 15 + (talent.id * 17) % 50;
+
 
   return (
     <div className="profile-container">

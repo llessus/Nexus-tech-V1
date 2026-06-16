@@ -65,6 +65,7 @@ const SettingsPage: React.FC = () => {
       }
     };
     carregarTalento();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario?.id]);
 
   if (!usuario) {

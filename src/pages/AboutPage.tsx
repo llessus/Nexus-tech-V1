@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { 
-  Code2, Users, Globe, ShieldCheck, Zap, Target, 
+  Code2, Globe, ShieldCheck, Zap, Target, 
   Rocket, ArrowRight, Github, Linkedin
 } from 'lucide-react';
 import Navbar from '../components/Navbar';

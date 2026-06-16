@@ -16,9 +16,9 @@ import {
   Wallet,
   X,
   TrendingUp,
-  ArrowUpRight,
   Download,
   Clock,
+
   Calendar,
   DollarSign,
   CheckCircle
@@ -48,8 +48,8 @@ const ProviderDashboardPage: React.FC = () => {
   
   // Estados para contratações (propostas/projetos diretos)
   const [contratacoes, setContratacoes] = useState<any[]>([]);
-  const [loadingContratacoes, setLoadingContratacoes] = useState(true);
   const [talentoId, setTalentoId] = useState<number | null>(null);
+
 
   // Estados para projetos do Mural (localStorage)
   const [muralProjetos, setMuralProjetos] = useState<Projeto[]>([]);
@@ -64,7 +64,8 @@ const ProviderDashboardPage: React.FC = () => {
 
     // 1. Carrega os projetos ativos do localStorage
     const localKey = `nexus:active_projects_${usuario.id}`;
-    let localData = localStorage.getItem(localKey);
+    const localData = localStorage.getItem(localKey);
+
     let projectsList = [];
 
     if (localData) {
@@ -134,7 +135,8 @@ const ProviderDashboardPage: React.FC = () => {
 
           // Sincronizar contratações "Aceito" com localStorage de projetos ativos
           const aceitas = dados.filter(c => c.status === 'Aceito');
-          let updated = [...currentList];
+          const updated = [...currentList];
+
           let changed = false;
 
           for (const c of aceitas) {
@@ -171,15 +173,16 @@ const ProviderDashboardPage: React.FC = () => {
       } catch (err) {
         console.error('Erro ao buscar dados do desenvolvedor:', err);
         setActiveProjects(currentList);
-      } finally {
-        setLoadingContratacoes(false);
       }
     };
+
 
     carregarDados(projectsList);
     // Carrega projetos do Mural
     setMuralProjetos(obterProjetos());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [usuario?.id]);
+
 
   useEffect(() => {
     if (selectedProject) {
@@ -188,7 +191,9 @@ const ProviderDashboardPage: React.FC = () => {
       setDeliveryDeploy(selectedProject.deliveryDeployUrl || '');
       setDeliveryNotes(selectedProject.deliveryNotes || '');
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedProject?.id]);
+
 
 
   // Filtra contratações com status "Confirmado"
@@ -384,28 +389,7 @@ const ProviderDashboardPage: React.FC = () => {
     });
   };
 
-  const handleCompleteProject = () => {
-    if (!selectedProject) return;
-    const updatedMilestones = selectedProject.milestones.map((m: any) => ({ ...m, checked: true }));
-    const dateStr = new Date().toLocaleDateString('pt-BR');
-    const logMsg = `[${dateStr}] Projeto concluído e entregue com sucesso!`;
 
-    const updated = {
-      ...selectedProject,
-      status: 'Concluído',
-      progress: 100,
-      milestones: updatedMilestones,
-      logs: [logMsg, ...(selectedProject.logs || [])]
-    };
-    setSelectedProject(updated);
-    saveProjectChanges(updated);
-
-    addNotification({
-      type: 'system',
-      title: 'Projeto Entregue!',
-      description: `O projeto "${selectedProject.title}" foi concluído e notificado ao cliente.`,
-    });
-  };
 
 
   const handleGerenciarProjeto = (project: any) => {
@@ -430,7 +414,8 @@ const ProviderDashboardPage: React.FC = () => {
   };
 
   // Handler para Aceitar Proposta
-  const handleAceitar = async (id: number, clienteNome: string, clienteId: number, horas: number) => {
+  const handleAceitar = async (id: number, clienteNome: string, horas: number) => {
+
     try {
       await atualizarStatusContratacao(id, 'Aceito');
       
@@ -456,7 +441,7 @@ const ProviderDashboardPage: React.FC = () => {
         // Adicionar novo projeto ao localStorage imediatamente
         const localKey = `nexus:active_projects_${usuario?.id}`;
         const localData = localStorage.getItem(localKey);
-        let projectsList = localData ? JSON.parse(localData) : [];
+        const projectsList = localData ? JSON.parse(localData) : [];
         
         const c = dados.find(x => x.id === id);
         if (c && !projectsList.some((p: any) => p.id === `contract-${c.id}`)) {
@@ -489,7 +474,8 @@ const ProviderDashboardPage: React.FC = () => {
   };
 
   // Handler para Recusar Proposta
-  const handleRecusar = async (id: number, clienteNome: string, clienteId: number) => {
+  const handleRecusar = async (id: number, clienteNome: string) => {
+
     try {
       await atualizarStatusContratacao(id, 'Recusado');
       
@@ -753,16 +739,17 @@ const ProviderDashboardPage: React.FC = () => {
                         <div className="proposal-actions-row">
                           <button 
                             className="btn-accept"
-                            onClick={() => handleAceitar(proposal.id, proposal.clienteNome, proposal.clienteId, proposal.horas)}
+                            onClick={() => handleAceitar(proposal.id, proposal.clienteNome, proposal.horas)}
                           >
                             <Check size={14} /> Aceitar
                           </button>
                           <button 
                             className="btn-decline ghost"
-                            onClick={() => handleRecusar(proposal.id, proposal.clienteNome, proposal.clienteId)}
+                            onClick={() => handleRecusar(proposal.id, proposal.clienteNome)}
                           >
                             <X size={14} /> Recusar
                           </button>
+
                         </div>
                       </article>
                     ))}

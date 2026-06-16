@@ -13,7 +13,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Topbar from '../components/Topbar';
 import { obterTalentoPorId, Talento } from '../api/talentos';
 import { getUsuarioLogado } from '../api/auth';
-import { criarContratacao } from '../api/contratacoes';
+
 import './HireTalentPage.css';
 
 const HireTalentPage: React.FC = () => {
@@ -25,8 +25,9 @@ const HireTalentPage: React.FC = () => {
   const [hours, setHours] = useState(5);
   const [selectedDate, setSelectedDate] = useState('22');
   const [paymentMethod, setPaymentMethod] = useState<'cartao' | 'pix' | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isProcessing] = useState(false);
+  const [showConfirmModal] = useState(false);
+
 
   const dates = ['20', '21', '22', '23', '24', '25', '26'];
 
