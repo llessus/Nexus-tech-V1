@@ -136,6 +136,52 @@ export async function runMigration() {
     console.log('Usuário admin seed criado: admin@nexus.tech / admin123');
   }
 
+  // Seed de Sabrina
+  const existingSabrina = await sql`SELECT id FROM usuarios WHERE email = 'sabrina@nexus.tech'`;
+  if (existingSabrina.length === 0) {
+    const sabSenhaHash = criarHashSenha('sabrina123');
+    await sql`
+      INSERT INTO usuarios (nome, email, senha_hash, tipo_conta, avatar_url)
+      VALUES ('Sabrina Carvalho', 'sabrina@nexus.tech', ${sabSenhaHash}, 'cliente', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop')
+    `;
+    console.log('Usuário Sabrina seed criado: sabrina@nexus.tech / sabrina123');
+  }
+
+  // Seed de Brendon Jabota
+  const existingBrendonJabota = await sql`SELECT id FROM usuarios WHERE email = 'jabotajabota407@gmail.com'`;
+  let jabotaId: number;
+  if (existingBrendonJabota.length === 0) {
+    const jabotaSenhaHash = criarHashSenha('brendon12');
+    const inserted = await sql`
+      INSERT INTO usuarios (nome, email, senha_hash, tipo_conta, avatar_url)
+      VALUES ('Brendon Russell', 'jabotajabota407@gmail.com', ${jabotaSenhaHash}, 'prestador', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop')
+      RETURNING id
+    `;
+    jabotaId = inserted[0].id;
+    console.log('Usuário Brendon Jabota seed criado: jabotajabota407@gmail.com / brendon12');
+  } else {
+    jabotaId = existingBrendonJabota[0].id;
+  }
+
+  // Também garantir que ele tenha um perfil de talento para aparecer nas buscas!
+  const existingJabotaTalent = await sql`SELECT id FROM talentos WHERE email = 'jabotajabota407@gmail.com'`;
+  if (existingJabotaTalent.length === 0) {
+    await sql`
+      INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, usuario_id, avatar_url)
+      VALUES (
+        'Brendon Russell',
+        'jabotajabota407@gmail.com',
+        'Desenvolvedor Full Stack Senior',
+        150.0,
+        ${JSON.stringify(['TypeScript', 'React', 'Node.js', 'PostgreSQL'])},
+        'Desenvolvedor full stack com vasta experiência em React e NodeJS.',
+        ${jabotaId},
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop'
+      )
+    `;
+    console.log('Perfil de talento criado para: Brendon Russell (Jabota)');
+  }
+
   // Seed de talento: garante que Brendon tenha um perfil de talento
   const existingTalent = await sql`SELECT id FROM talentos WHERE email = 'brendon@gmail.com'`;
 
