@@ -9,7 +9,8 @@ import {
   X,
   CheckCircle2,
   FileText,
-  Check
+  Check,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/Topbar';
@@ -30,6 +31,60 @@ const SKILL_OPTIONS = [
 
 const capitalize = (str: string) => {
   return str.replace(/\b\w/g, c => c.toUpperCase());
+};
+
+const formatarValorOrcamento = (val: string, moeda: string): string => {
+  if (!val.trim()) return 'A combinar';
+  
+  // Limpa caracteres que não sejam números, ponto ou vírgula
+  const cleaned = val.replace(/[^0-9.,]/g, '');
+  if (!cleaned) return 'A combinar';
+  
+  const lastDot = cleaned.lastIndexOf('.');
+  const lastComma = cleaned.lastIndexOf(',');
+  const lastSeparatorIdx = Math.max(lastDot, lastComma);
+  
+  let integerPart = cleaned;
+  let decimalPart = '00';
+  
+  if (lastSeparatorIdx !== -1) {
+    const isDecimal = cleaned.length - 1 - lastSeparatorIdx <= 2;
+    if (isDecimal) {
+      integerPart = cleaned.substring(0, lastSeparatorIdx);
+      decimalPart = cleaned.substring(lastSeparatorIdx + 1);
+      if (decimalPart.length === 1) decimalPart += '0';
+      if (decimalPart.length === 0) decimalPart = '00';
+      if (decimalPart.length > 2) decimalPart = decimalPart.substring(0, 2);
+    }
+  }
+  
+  integerPart = integerPart.replace(/[^0-9]/g, '');
+  if (!integerPart) integerPart = '0';
+  
+  const numberValue = parseFloat(`${integerPart}.${decimalPart}`);
+  
+  try {
+    const formatOptions: Intl.NumberFormatOptions = {
+      style: 'currency',
+      currency: moeda,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    };
+    
+    let locale = 'pt-BR';
+    if (moeda === 'USD') locale = 'en-US';
+    else if (moeda === 'EUR') locale = 'de-DE';
+    else if (moeda === 'GBP') locale = 'en-GB';
+    else if (moeda === 'JPY') locale = 'ja-JP';
+    
+    return new Intl.NumberFormat(locale, formatOptions).format(numberValue);
+  } catch (e) {
+    const symbols: Record<string, string> = {
+      BRL: 'R$', USD: 'US$', EUR: '€', GBP: '£', JPY: '¥', ARS: 'ARS$'
+    };
+    const sym = symbols[moeda] || moeda;
+    return `${sym} ${numberValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 };
 
 const DashboardPage: React.FC = () => {
@@ -58,6 +113,7 @@ const DashboardPage: React.FC = () => {
   const [projetoTitulo, setProjetoTitulo] = useState('');
   const [projetoDescricao, setProjetoDescricao] = useState('');
   const [projetoOrcamento, setProjetoOrcamento] = useState('');
+  const [projetoMoeda, setProjetoMoeda] = useState('BRL');
   const [projetoTecnologias, setProjetoTecnologias] = useState('');
   const [projetoPrazo, setProjetoPrazo] = useState('');
   const [projetoTipo, setProjetoTipo] = useState('Desenvolvimento Web');
@@ -111,6 +167,7 @@ const DashboardPage: React.FC = () => {
     setSelectedSkills([]);
     setMinRate('');
     setMaxRate('');
+    setSearchQuery('');
     setShowAdvancedFilters(false);
   };
 
@@ -234,6 +291,20 @@ const DashboardPage: React.FC = () => {
                     {skill}
                   </button>
                 ))}
+              </div>
+            </div>
+            <div className="dash-advanced-section">
+              <label className="dash-advanced-label">Buscar por Nome ou Tecnologia</label>
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: '#52525b', pointerEvents: 'none' }} />
+                <input 
+                  type="text" 
+                  placeholder="Ex: Anakin, Carlos, React..." 
+                  className="dash-rate-input"
+                  style={{ paddingLeft: '2.2rem', width: '100%', maxWidth: '320px' }}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
             </div>
             <div className="dash-advanced-section">
@@ -617,17 +688,37 @@ const DashboardPage: React.FC = () => {
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>Orçamento Estimado</label>
-                      <input
-                        type="text"
-                        placeholder="R$ 5.000,00"
-                        value={projetoOrcamento}
-                        onChange={(e) => setProjetoOrcamento(e.target.value)}
-                        style={{
-                          width: '100%', padding: '0.75rem 1rem', backgroundColor: '#121212',
-                          border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '0.6rem',
-                          color: 'white', fontSize: '0.9rem', fontFamily: 'Inter, sans-serif'
-                        }}
-                      />
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <select
+                          value={projetoMoeda}
+                          onChange={(e) => setProjetoMoeda(e.target.value)}
+                          style={{
+                            padding: '0.75rem', backgroundColor: '#121212',
+                            border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '0.6rem',
+                            color: 'white', fontSize: '0.9rem', fontFamily: 'Inter, sans-serif',
+                            width: '95px', flexShrink: 0
+                          }}
+                        >
+                          <option value="BRL">BRL (R$)</option>
+                          <option value="USD">USD ($)</option>
+                          <option value="EUR">EUR (€)</option>
+                          <option value="GBP">GBP (£)</option>
+                          <option value="JPY">JPY (¥)</option>
+                          <option value="ARS">ARS ($)</option>
+                        </select>
+                        <input
+                          type="text"
+                          placeholder="Ex: 5000"
+                          value={projetoOrcamento}
+                          onChange={(e) => setProjetoOrcamento(e.target.value)}
+                          style={{
+                            flex: 1, padding: '0.75rem 1rem', backgroundColor: '#121212',
+                            border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '0.6rem',
+                            color: 'white', fontSize: '0.9rem', fontFamily: 'Inter, sans-serif',
+                            minWidth: 0
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -659,12 +750,13 @@ const DashboardPage: React.FC = () => {
                         alert('Preencha ao menos o título e a descrição do projeto.');
                         return;
                       }
+                      const orcamentoFormatado = formatarValorOrcamento(projetoOrcamento, projetoMoeda);
                       salvarProjeto({
                         tipo: projetoTipo,
                         titulo: projetoTitulo,
                         descricao: projetoDescricao,
                         tecnologias: projetoTecnologias,
-                        orcamento: projetoOrcamento || 'A combinar',
+                        orcamento: orcamentoFormatado,
                         prazo: projetoPrazo || 'Sem prazo definido',
                         clienteId: usuario?.id || 9999,
                         clienteNome: usuario?.nome || 'Cliente Anônimo',
@@ -681,6 +773,7 @@ const DashboardPage: React.FC = () => {
                       setProjetoDescricao('');
                       setProjetoTecnologias('');
                       setProjetoOrcamento('');
+                      setProjetoMoeda('BRL');
                       setProjetoPrazo('');
                     }}
                     style={{
