@@ -30,6 +30,7 @@ const LoginPage: React.FC = () => {
   return (
     <div className="auth-container">
       <div className="auth-bg-glow" />
+      <div className="auth-bg-glow-right" />
       
       {/* Top Navigation */}
       <header className="auth-nav" style={{ justifyContent: 'center' }}>
@@ -123,14 +124,11 @@ const LoginPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="auth-footer">
-        <div>© 2026 NEXUS-TECH<br/>GLOBAL<br/>VER: 2.0.4-STABLE</div>
-        <div className="auth-footer-links">
-          <span>PROTOCOLO</span>
-          <span>PRIVACIDADE</span>
-          <span>AJUDA</span>
+      <footer className="auth-footer" style={{ justifyContent: 'center' }}>
+        <div className="status-indicator">
+          <div className="status-dot"></div>
+          <span>STATUS DO SISTEMA: ONLINE</span>
         </div>
-        <div style={{ width: '100px' }}></div> {/* Spacer for centering links */}
       </footer>
     </div>
   );

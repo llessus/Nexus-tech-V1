@@ -45,12 +45,13 @@ const RegisterPage: React.FC = () => {
   return (
     <div className="auth-container">
       <div className="auth-bg-glow" />
+      <div className="auth-bg-glow-right" />
       
       {/* Top Navigation */}
-      <header className="auth-nav">
+      <header className="auth-nav" style={{ justifyContent: 'center' }}>
         <button
           type="button"
-          className="auth-back-btn inline"
+          className="auth-back-btn"
           onClick={() => navigate(-1)}
           aria-label="Voltar para a página anterior"
           title="Voltar"
@@ -58,21 +59,9 @@ const RegisterPage: React.FC = () => {
           <ArrowLeft size={18} />
         </button>
         <a href="/" className="auth-logo">
+          <span style={{ border: '2px solid #00e5ff', padding: '2px 4px', borderRadius: '4px', fontSize: '1rem', marginRight: '6px' }}>&#62;_</span>
           NEXUS-TECH
         </a>
-        <div className="auth-nav-center">
-          <a href="#marketplace">Marketplace</a>
-          <a href="#solucoes">Soluções</a>
-          <a href="#empresa">Empresa</a>
-        </div>
-        <div className="auth-nav-right">
-          <button onClick={() => navigate('/login')} style={{ background: 'none', border: 'none', cursor: 'pointer' }} className="auth-nav-link">
-            Entrar
-          </button>
-          <button className="auth-nav-btn">
-            Cadastrar-se
-          </button>
-        </div>
       </header>
 
       {/* Main Content */}
@@ -190,16 +179,10 @@ const RegisterPage: React.FC = () => {
       </main>
 
       {/* Footer */}
-      <footer className="auth-footer">
-        <div>© 2026 NEXUS-TECH</div>
+      <footer className="auth-footer" style={{ justifyContent: 'center' }}>
         <div className="status-indicator">
           <div className="status-dot"></div>
           <span>STATUS DO SISTEMA: ONLINE</span>
-        </div>
-        <div className="auth-footer-links">
-          <span>DOCUMENTAÇÃO</span>
-          <span>PRIVACIDADE</span>
-          <span>SUPORTE</span>
         </div>
       </footer>
     </div>
