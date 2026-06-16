@@ -12,6 +12,8 @@ import SettingsPage from './pages/SettingsPage';
 import ClientProfilePage from './pages/ClientProfilePage';
 import ProfileRedirect from './pages/ProfileRedirect';
 import ChatPage from './pages/ChatPage';
+import AboutPage from './pages/AboutPage';
+import CheckoutPage from './pages/CheckoutPage';
 import { ProdutosDemo } from './components/ProdutosDemo';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -20,6 +22,7 @@ const App: React.FC = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         
@@ -97,6 +100,14 @@ const App: React.FC = () => {
         />
         
         <Route path="/demo" element={<ProdutosDemo />} />
+        <Route 
+          path="/checkout" 
+          element={
+            <ProtectedRoute allowedRoles={['cliente', 'admin']}>
+              <CheckoutPage />
+            </ProtectedRoute>
+          } 
+        />
       </Routes>
     </BrowserRouter>
   );

@@ -146,6 +146,79 @@ export async function runMigration() {
     await sql`UPDATE talentos SET usuario_id = ${brendonId} WHERE email = 'brendon@gmail.com' AND usuario_id IS NULL`;
   }
 
+  // Seed de novos talentos diversos (para preencher o Dashboard de forma profissional)
+  const talentosMock = [
+    {
+      nome: 'Ana Silva',
+      email: 'ana.design@gmail.com',
+      senha: 'senha-design-12',
+      role: 'UX/UI Designer Principal',
+      hourlyRate: 120.0,
+      skills: ['Figma', 'Adobe XD', 'UI Design', 'UX Research', 'Prototipagem'],
+      bio: 'Designer UX/UI focada em criar interfaces modernas, intuitivas e de alta performance.',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop'
+    },
+    {
+      nome: 'Lucas Oliveira',
+      email: 'lucas.devops@gmail.com',
+      senha: 'senha-devops-12',
+      role: 'DevOps Cloud Engineer Senior',
+      hourlyRate: 180.0,
+      skills: ['Docker', 'Kubernetes', 'AWS', 'CI/CD', 'Terraform'],
+      bio: 'Especialista em infraestrutura em nuvem, conteinerização e automação de pipelines de CI/CD.',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop'
+    },
+    {
+      nome: 'Mariana Santos',
+      email: 'mariana.mobile@gmail.com',
+      senha: 'senha-mobile-12',
+      role: 'Mobile Developer (React Native / Flutter)',
+      hourlyRate: 140.0,
+      skills: ['React Native', 'Flutter', 'iOS', 'Android', 'TypeScript'],
+      bio: 'Desenvolvedora de aplicativos móveis nativos e híbridos focada em experiência do usuário.',
+      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop'
+    },
+    {
+      nome: 'Thiago Souza',
+      email: 'thiago.qa@gmail.com',
+      senha: 'senha-qa-12',
+      role: 'QA Engineer (Test Automation)',
+      hourlyRate: 110.0,
+      skills: ['Cypress', 'Selenium', 'Jest', 'Testes Automatizados', 'QA'],
+      bio: 'Engenheiro de qualidade focado em testes automatizados, performance e auditorias de bugs.',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=150&auto=format&fit=crop'
+    }
+  ];
+
+  for (const t of talentosMock) {
+    const userExist = await sql`SELECT id FROM usuarios WHERE email = ${t.email}`;
+    let userId: number;
+    if (userExist.length === 0) {
+      const hash = criarHashSenha(t.senha);
+      const inserted = await sql`
+        INSERT INTO usuarios (nome, email, senha_hash, tipo_conta, avatar_url)
+        VALUES (${t.nome}, ${t.email}, ${hash}, 'prestador', ${t.avatarUrl})
+        RETURNING id
+      `;
+      userId = inserted[0].id;
+      console.log(`Usuário mock criado: ${t.email}`);
+    } else {
+      userId = userExist[0].id;
+      await sql`UPDATE usuarios SET avatar_url = ${t.avatarUrl} WHERE id = ${userId}`;
+    }
+
+    const talentExist = await sql`SELECT id FROM talentos WHERE email = ${t.email}`;
+    if (talentExist.length === 0) {
+      await sql`
+        INSERT INTO talentos (nome, email, role, hourly_rate, skills, bio, avatar_url, usuario_id)
+        VALUES (${t.nome}, ${t.email}, ${t.role}, ${t.hourlyRate}, ${JSON.stringify(t.skills)}, ${t.bio}, ${t.avatarUrl}, ${userId})
+      `;
+      console.log(`Perfil de talento mock criado para: ${t.nome}`);
+    } else {
+      await sql`UPDATE talentos SET usuario_id = ${userId}, avatar_url = ${t.avatarUrl} WHERE email = ${t.email}`;
+    }
+  }
+
   // Atualizar outros talentos que possam estar sem usuario_id
   await sql`
     UPDATE talentos

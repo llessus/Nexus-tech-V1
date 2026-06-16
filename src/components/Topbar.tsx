@@ -1,16 +1,21 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Search, Bell, Settings, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Search, Bell, Settings, MessageSquare, DollarSign, UserCheck, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getUsuarioLogado } from '../api/auth';
+import { getNotifications, markAllAsRead, getUnreadCount, timeAgo, Notification } from '../utils/notifications';
 import './Topbar.css';
 
 interface TopbarProps {
   onShowContratacoes?: () => void;
+  onSearch?: (query: string) => void;
 }
 
-const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
+const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes, onSearch }) => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const usuario = getUsuarioLogado();
   const initials = usuario?.nome
     ? usuario.nome
@@ -20,6 +25,52 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
         .join('')
         .toUpperCase()
     : '';
+
+  // Refresh notifications every 2 seconds
+  useEffect(() => {
+    const refresh = () => {
+      setNotifications(getNotifications());
+      setUnreadCount(getUnreadCount());
+    };
+    refresh();
+    const interval = setInterval(refresh, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleOpenNotifications = () => {
+    setShowNotifications(!showNotifications);
+    if (!showNotifications) {
+      markAllAsRead();
+      setTimeout(() => {
+        setNotifications(getNotifications());
+        setUnreadCount(0);
+      }, 300);
+    }
+  };
+
+  const getNotifIcon = (type: string) => {
+    switch (type) {
+      case 'message': return <MessageSquare size={14} />;
+      case 'payment': return <DollarSign size={14} />;
+      case 'hire': return <UserCheck size={14} />;
+      default: return <Info size={14} />;
+    }
+  };
+
+  const getNotifColor = (type: string) => {
+    switch (type) {
+      case 'message': return 'blue';
+      case 'payment': return 'green';
+      case 'hire': return 'cyan';
+      default: return 'gray';
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    onSearch?.(val);
+  };
 
   return (
     <header className="dash-topbar">
@@ -37,10 +88,8 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
           Nexus-Tech
         </div>
         <nav className="dash-nav-links hidden-mobile">
-          <a href="#" className="active" onClick={() => navigate('/dashboard')}>Marketplace</a>
-          <a href="#">Talentos</a>
-          <a href="#">Serviços</a>
-          <a href="#">Analytics</a>
+          <a href="#" className="active" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Marketplace</a>
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/about'); }}>Sobre</a>
         </nav>
       </div>
 
@@ -50,6 +99,8 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
           type="text"
           placeholder="Buscar talentos, tecnologias ou projetos..."
           className="dash-search-input"
+          value={searchQuery}
+          onChange={handleSearchChange}
         />
       </div>
 
@@ -63,18 +114,22 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
             Serviços Contratados
           </button>
         ) : (
-          <button className="auth-submit-btn hidden-mobile" style={{ padding: '0.5rem 1rem', marginTop: 0, width: 'auto' }}>
-            Publicar Projeto
+          <button 
+            className="auth-submit-btn hidden-mobile" 
+            style={{ padding: '0.5rem 1rem', marginTop: 0, width: 'auto' }}
+            onClick={() => navigate('/provider')}
+          >
+            Meu Painel
           </button>
         )}
         
         <div style={{ position: 'relative' }}>
           <button 
             className="dash-action-btn"
-            onClick={() => setShowNotifications(!showNotifications)}
+            onClick={handleOpenNotifications}
           >
             <Bell size={20} />
-            <div className="notification-dot"></div>
+            {unreadCount > 0 && <div className="notification-dot"></div>}
           </button>
 
           {/* Notification Dropdown Overlay */}
@@ -82,39 +137,31 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes }) => {
             <div className="notifications-dropdown">
               <div className="notifications-header">
                 <h3>Notificações</h3>
-                <span className="notifications-count">2 Novas</span>
+                <span className="notifications-count">
+                  {unreadCount > 0 ? `${unreadCount} Nova${unreadCount > 1 ? 's' : ''}` : 'Todas lidas'}
+                </span>
               </div>
               <div className="notifications-list">
-                <div className="notification-item unread">
-                  <div className="notification-icon-wrapper blue">
-                    <MessageSquare size={14} />
+                {notifications.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: '#71717a', fontSize: '0.8rem' }}>
+                    Nenhuma notificação ainda.
                   </div>
-                  <div className="notification-content">
-                    <p><strong>Sabrina Carpinteira</strong> enviou uma mensagem.</p>
-                    <span className="notification-time">Há 5 min</span>
-                  </div>
-                </div>
-                <div className="notification-item unread">
-                  <div className="notification-icon-wrapper green">
-                    <span style={{ fontSize: '12px', fontWeight: 'bold' }}>$</span>
-                  </div>
-                  <div className="notification-content">
-                    <p>Pagamento aprovado para <strong>Consultoria UX</strong>.</p>
-                    <span className="notification-time">Há 2 horas</span>
-                  </div>
-                </div>
-                <div className="notification-item">
-                  <div className="notification-icon-wrapper gray">
-                    <Settings size={14} />
-                  </div>
-                  <div className="notification-content">
-                    <p>Seu perfil foi atualizado com sucesso.</p>
-                    <span className="notification-time">Ontem</span>
-                  </div>
-                </div>
+                ) : (
+                  notifications.slice(0, 6).map(n => (
+                    <div key={n.id} className={`notification-item ${!n.read ? 'unread' : ''}`}>
+                      <div className={`notification-icon-wrapper ${getNotifColor(n.type)}`}>
+                        {getNotifIcon(n.type)}
+                      </div>
+                      <div className="notification-content">
+                        <p><strong>{n.title}</strong> {n.description}</p>
+                        <span className="notification-time">{timeAgo(n.timestamp)}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
               <div className="notifications-footer">
-                Ver todas as notificações
+                {notifications.length > 0 ? 'Ver todas as notificações' : 'Suas notificações aparecerão aqui'}
               </div>
             </div>
           )}

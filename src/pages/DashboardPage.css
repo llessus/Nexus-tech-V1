@@ -420,3 +420,129 @@
   border: none;
   z-index: 100;
 }
+
+/* Advanced Filters Panel */
+.dash-advanced-btn.active {
+  background-color: rgba(0, 229, 255, 0.1);
+  border-color: #00e5ff;
+  color: #00e5ff;
+}
+
+.dash-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background-color: #00e5ff;
+  color: black;
+  font-size: 0.65rem;
+  font-weight: 800;
+  border-radius: 50%;
+}
+
+.dash-advanced-panel {
+  background: #121212;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dash-advanced-section {
+  margin-bottom: 1.25rem;
+}
+
+.dash-advanced-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+}
+
+.dash-skill-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.dash-skill-chip {
+  padding: 0.35rem 0.85rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.dash-skill-chip:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.dash-skill-chip.active {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: #00e5ff;
+  color: #00e5ff;
+}
+
+.dash-rate-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dash-rate-input {
+  width: 120px;
+  padding: 0.5rem 0.75rem;
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  color: white;
+  font-size: 0.85rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.dash-rate-input:focus {
+  outline: none;
+  border-color: #00e5ff;
+}
+
+.dash-rate-input::placeholder {
+  color: #52525b;
+}
+
+.dash-advanced-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dash-clear-filters {
+  background: none;
+  border: none;
+  color: #00e5ff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dash-clear-filters:hover {
+  text-decoration: underline;
+}
+

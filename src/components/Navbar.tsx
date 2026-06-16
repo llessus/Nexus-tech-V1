@@ -6,10 +6,10 @@ import { getUsuarioLogado, getHomeByTipoConta } from '../api/auth';
 import './Navbar.css';
 
 const navLinks = [
-  { name: 'Home', href: '#' },
+  { name: 'Home', href: '/' },
   { name: 'Serviços', href: '#services' },
   { name: 'Soluções', href: '#solutions' },
-  { name: 'Sobre', href: '#about' },
+  { name: 'Sobre', href: '/about' },
   { name: 'Contato', href: '#contact' },
 ];
 
@@ -42,6 +42,14 @@ const Navbar: React.FC = () => {
     [0, 50],
     ['20px', '12px']
   );
+
+  const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.startsWith('/')) {
+      e.preventDefault();
+      navigate(href);
+    }
+    // Allow default behavior for #anchor links
+  };
 
   return (
     <motion.nav
@@ -87,6 +95,7 @@ const Navbar: React.FC = () => {
               <motion.a
                 key={link.name}
                 href={link.href}
+                onClick={(e) => handleLinkClick(e, link.href)}
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -140,11 +149,11 @@ const Navbar: React.FC = () => {
                 <motion.a
                   key={link.name}
                   href={link.href}
+                  onClick={(e) => { handleLinkClick(e, link.href); setIsOpen(false); }}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                   className="navbar-mobile-link"
-                  onClick={() => setIsOpen(false)}
                 >
                   {link.name}
                 </motion.a>

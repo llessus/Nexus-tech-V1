@@ -56,16 +56,8 @@ const HireTalentPage: React.FC = () => {
       return;
     }
 
-    setIsProcessing(true);
-    try {
-      await criarContratacao(usuario.id, talent.id, hours, totalCost);
-      setIsProcessing(false);
-      setShowConfirmModal(true);
-    } catch (err) {
-      console.error(err);
-      alert("Erro ao registrar a contratação no banco de dados.");
-      setIsProcessing(false);
-    }
+    // Redirecionar para o checkout com os parâmetros
+    navigate(`/checkout?talentoId=${talent.id}&hours=${hours}`);
   };
 
   if (loading) {

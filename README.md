@@ -6,8 +6,10 @@
 
 ## 👥 Integrantes do Grupo
 
-- **Brendon Russell**
-- **Carlos Eduardo**
+* **Brendon Russell** - Matrícula: `uc24200064`
+  * **Atribuição:** Desenvolvimento do Frontend, estilização responsiva com transições fluidas (Framer Motion) e gerenciamento de rotas/dashboard.
+* **Carlos Eduardo** - Matrícula: `uc24200871`
+  * **Atribuição:** Desenvolvimento da API backend (Serverless Functions na Vercel), modelagem e integração com o Banco de Dados (Neon/PostgreSQL) e schemas Zod.
 
 ---
 

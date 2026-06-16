@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/Topbar';
 import { getUsuarioLogado, logout, atualizarPerfil } from '../api/auth.js';
 import { obterTalentoPorUsuarioId, atualizarTalento } from '../api/talentos.js';
+import { addNotification } from '../utils/notifications';
 import './SettingsPage.css';
 
 const SettingsPage: React.FC = () => {
@@ -136,6 +137,11 @@ const SettingsPage: React.FC = () => {
         });
       }
 
+      addNotification({
+        type: 'system',
+        title: 'Perfil Atualizado',
+        description: 'Suas informações de perfil foram salvas com sucesso.',
+      });
       setSalvo(true);
       setTimeout(() => setSalvo(false), 2000);
     } catch (err) {

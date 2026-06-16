@@ -7,7 +7,8 @@ import {
   SlidersHorizontal,
   Send,
   X,
-  CheckCircle2
+  CheckCircle2,
+  Search
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Topbar from '../components/Topbar';
@@ -18,13 +19,30 @@ import './DashboardPage.css';
 
 const CATEGORIES = ["Todos", "Desenvolvedores", "Designers", "DevOps", "Mobile", "QA"];
 
+const SKILL_OPTIONS = [
+  "React", "TypeScript", "Node.js", "Python", "Java", "Go",
+  "Docker", "Kubernetes", "AWS", "Figma", "Flutter", "React Native",
+  "PostgreSQL", "MongoDB", "GraphQL", "Cypress", "Jest", "Selenium"
+];
+
+const capitalize = (str: string) => {
+  return str.replace(/\b\w/g, c => c.toUpperCase());
+};
+
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("Todos");
   const [talents, setTalents] = useState<Talento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const usuario = getUsuarioLogado();
   const firstName = usuario?.nome?.split(' ')[0] || '';
+
+  // Advanced filter states
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [minRate, setMinRate] = useState('');
+  const [maxRate, setMaxRate] = useState('');
 
   // Estados para o Modal de Serviços Contratados
   const [showContratacoesModal, setShowContratacoesModal] = useState(false);
@@ -59,24 +77,60 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills(prev => 
+      prev.includes(skill) ? prev.filter(s => s !== skill) : [...prev, skill]
+    );
+  };
+
+  const clearFilters = () => {
+    setSelectedSkills([]);
+    setMinRate('');
+    setMaxRate('');
+    setShowAdvancedFilters(false);
+  };
+
   const filteredTalents = talents.filter((talent) => {
-    if (activeCategory === 'Todos') return true;
-    const role = talent.role.toUpperCase();
-    if (activeCategory === 'Desenvolvedores') {
-      return role.includes('DEVELOPER') || role.includes('STACK') || role.includes('FRONT') || role.includes('BACK') || role.includes('ENGINEER');
+    // Category filter
+    if (activeCategory !== 'Todos') {
+      const role = talent.role.toUpperCase();
+      if (activeCategory === 'Desenvolvedores') {
+        if (!(role.includes('DEVELOPER') || role.includes('STACK') || role.includes('FRONT') || role.includes('BACK') || role.includes('ENGINEER'))) return false;
+      }
+      if (activeCategory === 'Designers') {
+        if (!(role.includes('DESIGNER') || role.includes('UX') || role.includes('UI'))) return false;
+      }
+      if (activeCategory === 'DevOps') {
+        if (!(role.includes('DEVOPS') || role.includes('INFRA') || role.includes('CLOUD') || role.includes('SYSADMIN'))) return false;
+      }
+      if (activeCategory === 'Mobile') {
+        if (!(role.includes('MOBILE') || role.includes('IOS') || role.includes('ANDROID') || role.includes('FLUTTER') || role.includes('REACT NATIVE'))) return false;
+      }
+      if (activeCategory === 'QA') {
+        if (!(role.includes('QA') || role.includes('TEST') || role.includes('QUALITY'))) return false;
+      }
     }
-    if (activeCategory === 'Designers') {
-      return role.includes('DESIGNER') || role.includes('UX') || role.includes('UI');
+
+    // Search filter: matches name, role, or skills
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      const matchesName = talent.nome.toLowerCase().includes(q);
+      const matchesRole = talent.role.toLowerCase().includes(q);
+      const matchesSkills = talent.skills.some(s => s.toLowerCase().includes(q));
+      if (!matchesName && !matchesRole && !matchesSkills) return false;
     }
-    if (activeCategory === 'DevOps') {
-      return role.includes('DEVOPS') || role.includes('INFRA') || role.includes('CLOUD') || role.includes('SYSADMIN');
+
+    // Advanced: skill filter
+    if (selectedSkills.length > 0) {
+      const talentSkillsLower = talent.skills.map(s => s.toLowerCase());
+      const hasMatch = selectedSkills.some(s => talentSkillsLower.includes(s.toLowerCase()));
+      if (!hasMatch) return false;
     }
-    if (activeCategory === 'Mobile') {
-      return role.includes('MOBILE') || role.includes('IOS') || role.includes('ANDROID') || role.includes('FLUTTER') || role.includes('REACT NATIVE');
-    }
-    if (activeCategory === 'QA') {
-      return role.includes('QA') || role.includes('TEST') || role.includes('QUALITY');
-    }
+
+    // Advanced: rate filter
+    if (minRate && talent.hourlyRate < Number(minRate)) return false;
+    if (maxRate && talent.hourlyRate > Number(maxRate)) return false;
+
     return true;
   });
 
@@ -86,7 +140,7 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="dash-container">
-      <Topbar onShowContratacoes={handleOpenContratacoes} />
+      <Topbar onShowContratacoes={handleOpenContratacoes} onSearch={setSearchQuery} />
 
       <main className="dash-main">
         {/* Welcome Banner */}
@@ -94,7 +148,7 @@ const DashboardPage: React.FC = () => {
           <div className="dash-hero-overlay" />
           <div className="dash-hero-content">
             <h1 className="dash-hero-title">
-              {firstName ? `Olá, ${firstName}!` : 'Acelere seu próximo'}<br/>
+              {firstName ? `Olá, ${capitalize(firstName)}!` : 'Acelere seu próximo'}<br/>
               {firstName ? 'Acelere seu projeto com a ' : 'projeto com a '}
               <span className="dash-hero-title-highlight">Nexus</span>
             </h1>
@@ -129,11 +183,63 @@ const DashboardPage: React.FC = () => {
             ))}
           </div>
           
-          <button className="dash-advanced-btn">
+          <button 
+            className={`dash-advanced-btn ${showAdvancedFilters ? 'active' : ''}`}
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          >
             <SlidersHorizontal size={16} />
             <span>Filtros Avançados</span>
+            {selectedSkills.length > 0 && (
+              <span className="dash-filter-badge">{selectedSkills.length}</span>
+            )}
           </button>
         </div>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <div className="dash-advanced-panel">
+            <div className="dash-advanced-section">
+              <label className="dash-advanced-label">Filtrar por Tecnologia</label>
+              <div className="dash-skill-chips">
+                {SKILL_OPTIONS.map(skill => (
+                  <button
+                    key={skill}
+                    className={`dash-skill-chip ${selectedSkills.includes(skill) ? 'active' : ''}`}
+                    onClick={() => toggleSkill(skill)}
+                  >
+                    {skill}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="dash-advanced-section">
+              <label className="dash-advanced-label">Faixa de Valor/Hora (R$)</label>
+              <div className="dash-rate-range">
+                <input 
+                  type="number" 
+                  placeholder="Mín" 
+                  className="dash-rate-input"
+                  value={minRate}
+                  onChange={(e) => setMinRate(e.target.value)}
+                />
+                <span style={{ color: '#52525b' }}>até</span>
+                <input 
+                  type="number" 
+                  placeholder="Máx" 
+                  className="dash-rate-input"
+                  value={maxRate}
+                  onChange={(e) => setMaxRate(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="dash-advanced-actions">
+              <button className="dash-clear-filters" onClick={clearFilters}>Limpar Filtros</button>
+              <span style={{ color: '#71717a', fontSize: '0.8rem' }}>
+                {filteredTalents.length} resultado{filteredTalents.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Talent Grid / State display */}
         {loading ? (
@@ -142,7 +248,12 @@ const DashboardPage: React.FC = () => {
           </div>
         ) : filteredTalents.length === 0 ? (
           <div className="dash-no-results" style={{ textAlign: 'center', padding: '5rem', color: '#a1a1aa', fontSize: '1.1rem', fontWeight: 500 }}>
-            Nenhum talento encontrado nesta categoria.
+            Nenhum talento encontrado{searchQuery ? ` para "${searchQuery}"` : ' nesta categoria'}.
+            {(selectedSkills.length > 0 || minRate || maxRate) && (
+              <button onClick={clearFilters} style={{ display: 'block', margin: '1rem auto', color: '#00e5ff', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.9rem' }}>
+                Limpar filtros
+              </button>
+            )}
           </div>
         ) : (
           <div className="dash-grid">
@@ -161,7 +272,7 @@ const DashboardPage: React.FC = () => {
                         className="talent-avatar" 
                       />
                       <div>
-                        <h3 className="talent-name">{talent.nome}</h3>
+                        <h3 className="talent-name">{capitalize(talent.nome)}</h3>
                         <p className="talent-role">{talent.role}</p>
                         <div className="talent-rating">
                           <Star size={14} color="#facc15" fill="#facc15" />
