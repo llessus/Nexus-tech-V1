@@ -800,8 +800,16 @@ const ChatPage: React.FC = () => {
                         <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Clique no microfone para enviar</span>
                         <button 
                           type="button" 
+                          onClick={stopRecordingAndSend}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '50%', boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)' }}
+                          title="Enviar áudio gravado"
+                        >
+                          <Mic size={18} fill="#ef4444" />
+                        </button>
+                        <button 
+                          type="button" 
                           onClick={cancelRecording}
-                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                          style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '4px' }}
                           title="Cancelar gravação"
                         >
                           <X size={16} />
