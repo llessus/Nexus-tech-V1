@@ -21,8 +21,8 @@
 /* Painel Esquerdo - Sidebar de Contatos */
 .chat-sidebar {
   width: 320px;
-  background-color: #0c0c0c;
-  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(180deg, #080f25 0%, #030712 100%);
+  border-right: 1px solid rgba(0, 229, 255, 0.15);
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -729,3 +729,66 @@
     opacity: 1;
   }
 }
+
+.chat-context-menu {
+  backdrop-filter: blur(8px);
+}
+.context-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+.context-menu-item.delete:hover {
+  background-color: rgba(239, 68, 68, 0.15) !important;
+}
+
+.chat-message-edit-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  min-width: 220px;
+}
+.chat-message-edit-textarea {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: 6px;
+  padding: 0.5rem;
+  font-size: 13px;
+  resize: vertical;
+  font-family: inherit;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+.chat-message-edit-textarea:focus {
+  border-color: #00e5ff;
+}
+.chat-message-edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.chat-message-edit-actions button {
+  font-size: 11px;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.chat-message-edit-actions .btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+.chat-message-edit-actions .btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.chat-message-edit-actions .btn-save {
+  background: #00e5ff;
+  color: black;
+}
+.chat-message-edit-actions .btn-save:hover {
+  background: #00b8cc;
+}
+

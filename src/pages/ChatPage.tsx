@@ -9,9 +9,12 @@ import {
   obterConversa, 
   obterContatos, 
   marcarConversaComoLida, 
+  deletarMensagem,
+  editarMensagem,
   ContatoChat, 
   Mensagem 
 } from '../api/mensagens';
+
 import './ChatPage.css';
 
 // Tech-themed animated GIFs and stickers placeholders
@@ -29,33 +32,72 @@ const TECH_STICKERS = [
   { name: 'Nexus', url: 'https://api.placeholder.com/120/120?text=Nexus' }
 ];
 
-// Sub-component for playing simulated voice messages
+// Sub-component for playing real voice messages
 const AudioMessagePlayer: React.FC<{ url: string }> = ({ url }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState('0:12');
+  const [duration, setDuration] = useState('--:--');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    let timer: any;
-    if (isPlaying) {
-      timer = setInterval(() => {
-        setProgress((p) => {
-          if (p >= 100) {
-            setIsPlaying(false);
-            return 0;
-          }
-          return p + 4;
-        });
-      }, 200);
+    const audio = new Audio(url);
+    audioRef.current = audio;
+
+    const handleLoadedMetadata = () => {
+      const minutes = Math.floor(audio.duration / 60);
+      const seconds = Math.floor(audio.duration % 60);
+      setDuration(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`);
+    };
+
+    const handleTimeUpdate = () => {
+      if (audio.duration) {
+        setProgress((audio.currentTime / audio.duration) * 100);
+      }
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(0);
+    };
+
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('ended', handleEnded);
+
+    if (audio.readyState >= 1) {
+      handleLoadedMetadata();
     }
-    return () => clearInterval(timer);
-  }, [isPlaying]);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [url]);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(e => console.error("Error playing audio:", e));
+      setIsPlaying(true);
+    }
+  };
+
+  const handleBarClick = (index: number) => {
+    if (!audioRef.current || !audioRef.current.duration) return;
+    const targetTime = (index / 15) * audioRef.current.duration;
+    audioRef.current.currentTime = targetTime;
+  };
 
   return (
     <div className="chat-audio-player-card">
       <button 
         type="button" 
-        onClick={() => setIsPlaying(!isPlaying)}
+        onClick={togglePlay}
         className="audio-play-btn"
       >
         {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" style={{ marginLeft: '2px' }} />}
@@ -68,9 +110,11 @@ const AudioMessagePlayer: React.FC<{ url: string }> = ({ url }) => {
             <div 
               key={barIdx} 
               className="audio-wave-bar"
+              onClick={() => handleBarClick(barIdx)}
               style={{ 
                 height: `${height}%`, 
                 background: active ? '#00e5ff' : 'rgba(255, 255, 255, 0.2)', 
+                cursor: 'pointer'
               }} 
             />
           );
@@ -80,6 +124,7 @@ const AudioMessagePlayer: React.FC<{ url: string }> = ({ url }) => {
     </div>
   );
 };
+
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -102,7 +147,18 @@ const ChatPage: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
 
+  // States and refs for voice recording and context menu
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<any>(null);
+
+  const [contextMenu, setContextMenu] = useState<{ x: number, y: number, messageId: number, conteudo: string } | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
+  const longPressTimeoutRef = useRef<any>(null);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
 
   const isImageUrl = (url: string) => {
     const imageRegex = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?.*)?)$/i;
@@ -316,31 +372,154 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  const handleRecordVoiceNote = () => {
-    if (isRecording || isSending) return;
-    setIsRecording(true);
-    setRecordingTime(0);
-    
-    const timer = setInterval(() => {
-      setRecordingTime(t => t + 1);
-    }, 1000);
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
 
-    setTimeout(async () => {
-      clearInterval(timer);
-      setIsRecording(false);
-      
-      if (!usuarioLogado || !contatoSelecionado) return;
-      
-      try {
-        const msg = await enviarMensagem(usuarioLogado.id, contatoSelecionado.id, '[AUDIO]:https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
-        setMensagens(prev => [...prev, msg]);
-        carregarListaContatos(contatoSelecionado.id);
-      } catch (err) {
-        console.error(err);
-        alert('Erro ao enviar áudio.');
-      }
-    }, 2000);
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        stream.getTracks().forEach(track => track.stop());
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (audioBlob.size === 0) return;
+
+        setIsSending(true);
+        try {
+          const file = new File([audioBlob], 'voicenote.webm', { type: 'audio/webm' });
+          const response = await fetch(`/api/upload?filename=voicenote.webm`, {
+            method: 'POST',
+            body: file,
+          });
+
+          if (!response.ok) {
+            throw new Error('Falha no upload do áudio.');
+          }
+
+          const data = await response.json();
+          const msg = await enviarMensagem(usuarioLogado.id, contatoSelecionado!.id, `[AUDIO]:${data.url}`);
+          setMensagens(prev => [...prev, msg]);
+          carregarListaContatos(contatoSelecionado!.id);
+        } catch (err) {
+          console.error(err);
+          alert('Erro ao enviar áudio gravado.');
+        } finally {
+          setIsSending(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime((t) => t + 1);
+      }, 1000);
+    } catch (err) {
+      console.error('Erro ao acessar microfone:', err);
+      alert('Não foi possível acessar seu microfone. Verifique as permissões de gravação de áudio.');
+    }
   };
+
+  const stopRecordingAndSend = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current);
+    }
+  };
+
+  const handleRecordVoiceNote = () => {
+    if (isRecording) {
+      stopRecordingAndSend();
+    } else {
+      startRecording();
+    }
+  };
+
+  // Close context menu handler
+  useEffect(() => {
+    const closeMenu = () => setContextMenu(null);
+    window.addEventListener('click', closeMenu);
+    return () => window.removeEventListener('click', closeMenu);
+  }, []);
+
+  const handleContextMenu = (e: React.MouseEvent, m: Mensagem) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      messageId: m.id,
+      conteudo: m.conteudo
+    });
+  };
+
+  const handleTouchStart = (e: React.TouchEvent, m: Mensagem) => {
+    const touch = e.touches[0];
+    const x = touch.clientX;
+    const y = touch.clientY;
+    
+    longPressTimeoutRef.current = setTimeout(() => {
+      setContextMenu({
+        x,
+        y,
+        messageId: m.id,
+        conteudo: m.conteudo
+      });
+    }, 600);
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+  };
+
+  const handleSaveEdit = async (messageId: number) => {
+    if (!editingText.trim()) return;
+    try {
+      await editarMensagem(messageId, editingText.trim());
+      setMensagens(prev => prev.map(msg => msg.id === messageId ? { ...msg, conteudo: editingText.trim() } : msg));
+      setEditingMessageId(null);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao editar mensagem.');
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: number) => {
+    if (!confirm('Deseja realmente apagar esta mensagem para todos?')) return;
+    try {
+      await deletarMensagem(messageId);
+      setMensagens(prev => prev.filter(msg => msg.id !== messageId));
+      setContextMenu(null);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao excluir mensagem.');
+    }
+  };
+
 
   const handleSendMedia = async (url: string) => {
     if (!usuarioLogado || !contatoSelecionado) return;
@@ -521,10 +700,31 @@ const ChatPage: React.FC = () => {
                           )}
 
                           {/* Conteúdo da bolha */}
-                          <div className="chat-message-bubble">
-                            {renderMessageContent(m.conteudo)}
+                          <div 
+                            className="chat-message-bubble"
+                            onContextMenu={isSentByMe ? (e) => handleContextMenu(e, m) : undefined}
+                            onTouchStart={isSentByMe ? (e) => handleTouchStart(e, m) : undefined}
+                            onTouchEnd={isSentByMe ? handleTouchEnd : undefined}
+                          >
+                            {editingMessageId === m.id ? (
+                              <div className="chat-message-edit-inline" onClick={(e) => e.stopPropagation()}>
+                                <textarea
+                                  value={editingText}
+                                  onChange={(e) => setEditingText(e.target.value)}
+                                  className="chat-message-edit-textarea"
+                                  rows={2}
+                                />
+                                <div className="chat-message-edit-actions">
+                                  <button type="button" className="btn-cancel" onClick={() => setEditingMessageId(null)}>Cancelar</button>
+                                  <button type="button" className="btn-save" onClick={() => handleSaveEdit(m.id)}>Salvar</button>
+                                </div>
+                              </div>
+                            ) : (
+                              renderMessageContent(m.conteudo)
+                            )}
                             <span className="chat-message-time">{timeStr}</span>
                           </div>
+
 
                           {/* Enviado: Meu avatar à direita */}
                           {isSentByMe && (
@@ -591,11 +791,25 @@ const ChatPage: React.FC = () => {
 
                 <form onSubmit={handleEnviar} className="chat-input-form" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
                   {isRecording ? (
-                    <div className="recording-status-container" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#ef4444', fontSize: '13px', padding: '0.5rem 0' }}>
-                      <span className="recording-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
-                      <strong>Gravando mensagem de voz... ({recordingTime}s)</strong>
+                    <div className="recording-status-container" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#ef4444', fontSize: '13px', padding: '0.5rem 0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="recording-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                        <strong>Gravando... ({recordingTime}s)</strong>
+                      </div>
+                      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <span style={{ fontSize: '11px', color: '#a1a1aa' }}>Clique no microfone para enviar</span>
+                        <button 
+                          type="button" 
+                          onClick={cancelRecording}
+                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                          title="Cancelar gravação"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
                     </div>
                   ) : (
+
                     <textarea 
                       placeholder="Escreva sua mensagem aqui..."
                       value={novoConteudo}
@@ -670,8 +884,67 @@ const ChatPage: React.FC = () => {
           )}
         </main>
       </div>
+      {contextMenu && (
+        <div 
+          className="chat-context-menu"
+          style={{ 
+            position: 'fixed', 
+            top: `${contextMenu.y}px`, 
+            left: `${contextMenu.x}px`,
+            zIndex: 9999,
+            background: '#121212',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)',
+            padding: '4px'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button 
+            className="context-menu-item"
+            onClick={() => {
+              setEditingMessageId(contextMenu.messageId);
+              setEditingText(contextMenu.conteudo);
+              setContextMenu(null);
+            }}
+            style={{ 
+              display: 'block', 
+              width: '100%', 
+              textAlign: 'left', 
+              background: 'none', 
+              border: 'none', 
+              color: 'white', 
+              padding: '8px 12px', 
+              fontSize: '13px', 
+              cursor: 'pointer',
+              borderRadius: '4px'
+            }}
+          >
+            Editar Mensagem
+          </button>
+          <button 
+            className="context-menu-item delete"
+            onClick={() => handleDeleteMessage(contextMenu.messageId)}
+            style={{ 
+              display: 'block', 
+              width: '100%', 
+              textAlign: 'left', 
+              background: 'none', 
+              border: 'none', 
+              color: '#ef4444', 
+              padding: '8px 12px', 
+              fontSize: '13px', 
+              cursor: 'pointer',
+              borderRadius: '4px'
+            }}
+          >
+            Apagar para Todos
+          </button>
+        </div>
+      )}
     </div>
   );
 };
+
 
 export default ChatPage;

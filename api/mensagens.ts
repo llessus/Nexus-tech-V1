@@ -108,7 +108,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error(erro);
       return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
     }
+  } else if (parts.length === 3) {
+    const mensagemId = Number(parts[2]);
+    if (isNaN(mensagemId)) {
+      return res.status(400).json({ erro: 'O ID da mensagem deve ser um número válido.' });
+    }
+
+    if (req.method === 'DELETE') {
+      try {
+        await mensagemRepository.deletarMensagem(mensagemId);
+        return res.status(204).end();
+      } catch (erro) {
+        console.error(erro);
+        return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+      }
+    } else if (req.method === 'PATCH') {
+      try {
+        const { conteudo } = req.body;
+        if (!conteudo || typeof conteudo !== 'string') {
+          return res.status(400).json({ erro: 'O conteúdo é obrigatório e deve ser uma string.' });
+        }
+        const mensagemAtualizada = await mensagemRepository.editarMensagem(mensagemId, conteudo);
+        return res.json(mensagemAtualizada);
+      } catch (erro) {
+        console.error(erro);
+        return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+      }
+    } else {
+      return res.status(405).json({ erro: 'Método não permitido.' });
+    }
   }
 
   return res.status(404).json({ erro: 'Rota não encontrada.' });
 }
+

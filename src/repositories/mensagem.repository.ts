@@ -157,3 +157,23 @@ export const obterContatosRecentes = async (usuarioId: number): Promise<ContatoC
     return dateB - dateA;
   });
 };
+
+export const deletarMensagem = async (id: number): Promise<void> => {
+  const sql = getSQL();
+  await sql`
+    DELETE FROM mensagens
+    WHERE id = ${id}
+  `;
+};
+
+export const editarMensagem = async (id: number, conteudo: string): Promise<Mensagem> => {
+  const sql = getSQL();
+  const updated = await sql`
+    UPDATE mensagens
+    SET conteudo = ${conteudo}
+    WHERE id = ${id}
+    RETURNING *
+  `;
+  return toMensagem(updated[0]);
+};
+

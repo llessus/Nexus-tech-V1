@@ -10,8 +10,10 @@ import {
   Sparkles,
   BookOpen,
   Linkedin,
-  Github
+  Github,
+  Instagram
 } from 'lucide-react';
+
 import { useNavigate, useParams } from 'react-router-dom';
 import Topbar from '../components/Topbar';
 import { obterTalentoPorId, atualizarTalento, Talento } from '../api/talentos';
@@ -43,6 +45,8 @@ const TalentProfilePage: React.FC = () => {
   const [editLinkedin, setEditLinkedin] = useState('');
   const [editGithub, setEditGithub] = useState('');
   const [editPortfolio, setEditPortfolio] = useState('');
+  const [editInstagram, setEditInstagram] = useState('');
+
   
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPortfolioIdx, setUploadingPortfolioIdx] = useState<number | null>(null);
@@ -70,13 +74,16 @@ const TalentProfilePage: React.FC = () => {
           setEditLinkedin(meta.linkedin || '');
           setEditGithub(meta.github || '');
           setEditPortfolio(meta.portfolio || '');
+          setEditInstagram(meta.instagram || '');
         } else {
           setEditLocation(data.id % 2 === 0 ? "Remoto" : "São Paulo");
           setEditLanguages("Português, Inglês");
           setEditLinkedin('');
           setEditGithub('');
           setEditPortfolio('');
+          setEditInstagram('');
         }
+
         
         setLoading(false);
       })
@@ -178,8 +185,10 @@ const TalentProfilePage: React.FC = () => {
         languages: editLanguages,
         linkedin: editLinkedin,
         github: editGithub,
-        portfolio: editPortfolio
+        portfolio: editPortfolio,
+        instagram: editInstagram
       }));
+
 
       if (updated) {
         setTalent(updated);
@@ -221,13 +230,16 @@ const TalentProfilePage: React.FC = () => {
       setEditLinkedin(meta.linkedin || '');
       setEditGithub(meta.github || '');
       setEditPortfolio(meta.portfolio || '');
+      setEditInstagram(meta.instagram || '');
     } else {
       setEditLocation(talent.id % 2 === 0 ? "Remoto" : "São Paulo");
       setEditLanguages("Português, Inglês");
       setEditLinkedin('');
       setEditGithub('');
       setEditPortfolio('');
+      setEditInstagram('');
     }
+
 
     setIsEditing(false);
   };
@@ -368,7 +380,7 @@ const TalentProfilePage: React.FC = () => {
               </div>
 
               {/* Modo de Visualização dos Links Sociais */}
-              {!isEditing && (editLinkedin || editGithub || editPortfolio) && (
+              {!isEditing && (editLinkedin || editGithub || editPortfolio || editInstagram) && (
                 <div className="profile-social-links">
                   {editLinkedin && (
                     <a href={editLinkedin.startsWith('http') ? editLinkedin : `https://${editLinkedin}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
@@ -388,8 +400,15 @@ const TalentProfilePage: React.FC = () => {
                       <span>Portfólio</span>
                     </a>
                   )}
+                  {editInstagram && (
+                    <a href={editInstagram.startsWith('http') ? editInstagram : `https://${editInstagram}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
+                      <Instagram size={16} />
+                      <span>Instagram</span>
+                    </a>
+                  )}
                 </div>
               )}
+
 
               {/* Modo de Edição dos Links Sociais */}
               {isEditing && (
@@ -418,8 +437,17 @@ const TalentProfilePage: React.FC = () => {
                     style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', width: '150px' }}
                     placeholder="Portfólio URL"
                   />
+                  <input 
+                    type="text" 
+                    value={editInstagram} 
+                    onChange={e => setEditInstagram(e.target.value)} 
+                    className="profile-inline-input" 
+                    style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', width: '150px' }}
+                    placeholder="Instagram (URL ou usuário)"
+                  />
                 </div>
               )}
+
             </div>
           </div>
 
@@ -496,22 +524,8 @@ const TalentProfilePage: React.FC = () => {
         <div className="profile-content-grid">
           {/* Left Column */}
           <div>
-            <div className="profile-section-title">Sobre Mim</div>
-            <div className="profile-about-text">
-              {isEditing ? (
-                <textarea 
-                  value={editBio} 
-                  onChange={e => setEditBio(e.target.value)} 
-                  className="profile-inline-textarea"
-                  placeholder="Escreva sua bio ou apresentação..."
-                  rows={6}
-                />
-              ) : (
-                <p>{talent.bio || 'Sem biografia definida.'}</p>
-              )}
-            </div>
-
             <div className="profile-portfolio-header">
+
               <div className="profile-section-title" style={{margin: 0, border: 'none'}}>Portfólio</div>
               {!isEditing && talent.portfolioImages && talent.portfolioImages.length > 0 && (
                 <span className="profile-portfolio-subtitle">Projetos Principais</span>

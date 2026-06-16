@@ -90,3 +90,30 @@ export const contarNaoLidas = async (
   const data = await response.json();
   return data.totalNaoLidas;
 };
+
+export const deletarMensagem = async (id: number): Promise<void> => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    throw new Error('Falha ao deletar mensagem');
+  }
+};
+
+export const editarMensagem = async (id: number, conteudo: string): Promise<Mensagem> => {
+  const response = await fetch(`${API_URL}/${id}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ conteudo }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Falha ao editar mensagem');
+  }
+
+  return response.json();
+};
+

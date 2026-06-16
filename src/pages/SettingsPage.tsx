@@ -28,6 +28,8 @@ const SettingsPage: React.FC = () => {
   const [linkedin, setLinkedin] = useState('');
   const [github, setGithub] = useState('');
   const [portfolio, setPortfolio] = useState('');
+  const [instagram, setInstagram] = useState('');
+
   const [loadingTalento, setLoadingTalento] = useState(false);
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
 
@@ -51,6 +53,8 @@ const SettingsPage: React.FC = () => {
               setLinkedin(meta.linkedin || '');
               setGithub(meta.github || '');
               setPortfolio(meta.portfolio || '');
+              setInstagram(meta.instagram || '');
+
             }
           }
         } catch (err) {
@@ -153,9 +157,11 @@ const SettingsPage: React.FC = () => {
             ...existingMeta,
             linkedin,
             github,
-            portfolio
+            portfolio,
+            instagram
           })
         );
+
       }
 
       addNotification({
@@ -416,7 +422,7 @@ const SettingsPage: React.FC = () => {
                           placeholder="github.com/seu-usuario"
                         />
                       </div>
-                      <div className="settings-form-group full-width">
+                      <div className="settings-form-group">
                         <label className="settings-label">Portfólio URL</label>
                         <input
                           type="text"
@@ -426,6 +432,17 @@ const SettingsPage: React.FC = () => {
                           placeholder="https://seu-portfolio.com"
                         />
                       </div>
+                      <div className="settings-form-group">
+                        <label className="settings-label">Instagram</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          value={instagram}
+                          onChange={(e) => setInstagram(e.target.value)}
+                          placeholder="instagram.com/seu-perfil"
+                        />
+                      </div>
+
                     </div>
                   </>
                 )}

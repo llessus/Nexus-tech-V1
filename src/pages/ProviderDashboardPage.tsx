@@ -20,8 +20,10 @@ import {
   Download,
   Clock,
   Calendar,
-  DollarSign
+  DollarSign,
+  CheckCircle
 } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import { getUsuarioLogado, logout } from '../api/auth';
 import { obterTalentoPorUsuarioId } from '../api/talentos';
@@ -35,6 +37,14 @@ const ProviderDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const [active, setActive] = useState('painel'); // 'painel' | 'projetos' | 'financas' | 'gerenciar-projeto'
   const usuario = getUsuarioLogado();
+
+  // Estados para entrega de projeto ZIP/links
+  const [deliveryZip, setDeliveryZip] = useState<string>('');
+  const [deliveryGithub, setDeliveryGithub] = useState<string>('');
+  const [deliveryDeploy, setDeliveryDeploy] = useState<string>('');
+  const [deliveryNotes, setDeliveryNotes] = useState<string>('');
+  const [uploadingZip, setUploadingZip] = useState<boolean>(false);
+
   
   // Estados para contratações (propostas/projetos diretos)
   const [contratacoes, setContratacoes] = useState<any[]>([]);
@@ -171,6 +181,16 @@ const ProviderDashboardPage: React.FC = () => {
     setMuralProjetos(obterProjetos());
   }, [usuario?.id]);
 
+  useEffect(() => {
+    if (selectedProject) {
+      setDeliveryZip(selectedProject.deliveryZipUrl || '');
+      setDeliveryGithub(selectedProject.deliveryGithubUrl || '');
+      setDeliveryDeploy(selectedProject.deliveryDeployUrl || '');
+      setDeliveryNotes(selectedProject.deliveryNotes || '');
+    }
+  }, [selectedProject?.id]);
+
+
   // Filtra contratações com status "Confirmado"
   const propostasPendentes = useMemo(() => {
     return contratacoes.filter(c => c.status === 'Confirmado');
@@ -301,6 +321,69 @@ const ProviderDashboardPage: React.FC = () => {
     saveProjectChanges(updated);
   };
 
+  const handleZipUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingZip(true);
+    try {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha no upload do arquivo ZIP');
+      }
+
+      const data = await response.json();
+      setDeliveryZip(data.url);
+      addNotification({
+        type: 'system',
+        title: 'ZIP Carregado',
+        description: `O arquivo ${file.name} foi enviado com sucesso.`,
+      });
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao fazer upload do arquivo ZIP.');
+    } finally {
+      setUploadingZip(false);
+    }
+  };
+
+  const handleFinalizarEEntregar = () => {
+    if (!selectedProject) return;
+    if (!deliveryZip) {
+      alert('Por favor, faça o upload do código-fonte em formato ZIP.');
+      return;
+    }
+
+    const updatedMilestones = selectedProject.milestones.map((m: any) => ({ ...m, checked: true }));
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const logMsg = `[${dateStr}] Entregável final submetido: Código ZIP (${deliveryZip.split('/').pop()}), Repositório Git (${deliveryGithub || 'Não informado'}) e Deploy (${deliveryDeploy || 'Não informado'}).`;
+
+    const updated = {
+      ...selectedProject,
+      status: 'Concluído',
+      progress: 100,
+      milestones: updatedMilestones,
+      logs: [logMsg, ...(selectedProject.logs || [])],
+      deliveryZipUrl: deliveryZip,
+      deliveryGithubUrl: deliveryGithub,
+      deliveryDeployUrl: deliveryDeploy,
+      deliveryNotes: deliveryNotes
+    };
+    
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+
+    addNotification({
+      type: 'system',
+      title: 'Trabalho Entregue!',
+      description: `Código ZIP e links do projeto "${selectedProject.title}" foram entregues ao cliente.`,
+    });
+  };
+
   const handleCompleteProject = () => {
     if (!selectedProject) return;
     const updatedMilestones = selectedProject.milestones.map((m: any) => ({ ...m, checked: true }));
@@ -323,6 +406,7 @@ const ProviderDashboardPage: React.FC = () => {
       description: `O projeto "${selectedProject.title}" foi concluído e notificado ao cliente.`,
     });
   };
+
 
   const handleGerenciarProjeto = (project: any) => {
     setSelectedProject(project);
@@ -1154,17 +1238,6 @@ const ProviderDashboardPage: React.FC = () => {
                       </button>
                     )}
 
-                    {selectedProject.status !== 'Concluído' && (
-                      <button 
-                        className="btn-side-action highlight-complete"
-                        onClick={handleCompleteProject}
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: '#00e5ff', border: 'none', borderRadius: '8px', color: '#000', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
-                      >
-                        <Check size={16} />
-                        Finalizar Projeto (100%)
-                      </button>
-                    )}
-
                     {selectedProject.clientId && (
                       <button 
                         className="btn-side-action"
@@ -1179,6 +1252,146 @@ const ProviderDashboardPage: React.FC = () => {
                     )}
                   </div>
                 </div>
+
+                {selectedProject.status === 'Concluído' ? (
+                  <div className="projeto-gerenciar-card" style={{ border: '1px solid rgba(34, 197, 94, 0.2)', background: 'rgba(34, 197, 94, 0.02)' }}>
+                    <h3 style={{ color: '#22c55e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <CheckCircle size={18} />
+                      Entrega Confirmada
+                    </h3>
+                    <p style={{ fontSize: '11px', color: '#71717a', margin: '0.2rem 0 1rem 0' }}>O projeto foi concluído e os seguintes entregáveis foram disponibilizados:</p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '12px' }}>
+                      {selectedProject.deliveryZipUrl && (
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.5rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: '#a1a1aa' }}>Código-fonte (ZIP):</span>
+                          <a 
+                            href={selectedProject.deliveryZipUrl} 
+                            download 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: '#00e5ff', display: 'flex', alignItems: 'center', gap: '0.25rem', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            <Download size={14} /> Baixar Código
+                          </a>
+                        </div>
+                      )}
+
+                      {selectedProject.deliveryGithubUrl && (
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.5rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: '#a1a1aa' }}>Repositório Git:</span>
+                          <a 
+                            href={selectedProject.deliveryGithubUrl.startsWith('http') ? selectedProject.deliveryGithubUrl : `https://${selectedProject.deliveryGithubUrl}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: '#00e5ff', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            Acessar GitHub
+                          </a>
+                        </div>
+                      )}
+
+                      {selectedProject.deliveryDeployUrl && (
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.5rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ color: '#a1a1aa' }}>Deploy / Demo:</span>
+                          <a 
+                            href={selectedProject.deliveryDeployUrl.startsWith('http') ? selectedProject.deliveryDeployUrl : `https://${selectedProject.deliveryDeployUrl}`} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            style={{ color: '#00e5ff', textDecoration: 'none', fontWeight: 600 }}
+                          >
+                            Visualizar Live
+                          </a>
+                        </div>
+                      )}
+
+                      {selectedProject.deliveryNotes && (
+                        <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: '6px', marginTop: '0.25rem' }}>
+                          <span style={{ color: '#a1a1aa', display: 'block', marginBottom: '0.25rem', fontSize: '11px' }}>Mensagem de Encerramento:</span>
+                          <p style={{ margin: 0, color: '#d4d4d8', fontSize: '12px', fontStyle: 'italic', lineHeight: '1.4' }}>"{selectedProject.deliveryNotes}"</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="projeto-gerenciar-card" style={{ border: '1px solid rgba(0, 229, 255, 0.2)', background: 'rgba(0, 229, 255, 0.01)' }}>
+                    <h3>Entregar Projeto (Finalizar Trabalho)</h3>
+                    <p style={{ fontSize: '11px', color: '#71717a', margin: '0.2rem 0 1rem 0' }}>Envie os arquivos finais e links para liberação do pagamento em garantia.</p>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div>
+                        <label style={{ fontSize: '11px', color: '#a1a1aa', display: 'block', marginBottom: '0.25rem' }}>Código Fonte (.ZIP) *</label>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn-cyan-sm"
+                            onClick={() => document.getElementById('zip-upload-input')?.click()}
+                            style={{ height: '36px', whiteSpace: 'nowrap', marginTop: 0 }}
+                            disabled={uploadingZip}
+                          >
+                            {uploadingZip ? 'Carregando...' : deliveryZip ? 'Alterar ZIP' : 'Carregar ZIP'}
+                          </button>
+                          <input
+                            type="file"
+                            id="zip-upload-input"
+                            accept=".zip"
+                            style={{ display: 'none' }}
+                            onChange={handleZipUpload}
+                          />
+                          <span style={{ fontSize: '11px', color: deliveryZip ? '#00e5ff' : '#71717a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }}>
+                            {deliveryZip ? deliveryZip.split('/').pop() : 'Nenhum arquivo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', color: '#a1a1aa', display: 'block', marginBottom: '0.25rem' }}>Link do Repositório (GitHub)</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          placeholder="github.com/usuario/projeto"
+                          style={{ marginTop: 0, fontSize: '12px', padding: '0.4rem 0.6rem' }}
+                          value={deliveryGithub}
+                          onChange={(e) => setDeliveryGithub(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', color: '#a1a1aa', display: 'block', marginBottom: '0.25rem' }}>Link do Deploy / Demonstração</label>
+                        <input
+                          type="text"
+                          className="settings-input"
+                          placeholder="projeto-demo.vercel.app"
+                          style={{ marginTop: 0, fontSize: '12px', padding: '0.4rem 0.6rem' }}
+                          value={deliveryDeploy}
+                          onChange={(e) => setDeliveryDeploy(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '11px', color: '#a1a1aa', display: 'block', marginBottom: '0.25rem' }}>Mensagem Final para o Cliente</label>
+                        <textarea
+                          className="settings-textarea"
+                          placeholder="Agradecimento ou instruções de execução..."
+                          style={{ fontSize: '12px', padding: '0.4rem 0.6rem', height: '60px', minHeight: '60px' }}
+                          value={deliveryNotes}
+                          onChange={(e) => setDeliveryNotes(e.target.value)}
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        className="btn-side-action highlight-complete"
+                        onClick={handleFinalizarEEntregar}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: '#00e5ff', border: 'none', borderRadius: '8px', color: '#000', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s', marginTop: '0.5rem' }}
+                      >
+                        <Check size={16} />
+                        Enviar Entregáveis
+                      </button>
+                    </div>
+                  </div>
+                )}
+
 
                 <div className="projeto-gerenciar-card">
                   <h3>Informações de Faturamento</h3>

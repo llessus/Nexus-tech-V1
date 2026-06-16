@@ -117,6 +117,67 @@ const LandingPage: React.FC = () => {
           </div>
         </section>
 
+        {/* Marketplace Preview Section */}
+        <section className="preview-section">
+          <div className="preview-container">
+            <div className="section-header">
+              <span className="badge">Destaques da Plataforma</span>
+              <h2 className="section-title">Talentos em Destaque</h2>
+              <p className="section-subtitle">Conecte-se com especialistas prontos para acelerar seu projeto de software.</p>
+            </div>
+            
+            <div className="talents-preview-grid">
+              {[
+                {
+                  nome: "Sabrina Carpenter",
+                  role: "Lead Pop-Tech Architect",
+                  rate: "R$ 350/h",
+                  avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=150&auto=format&fit=crop",
+                  skills: ["React", "TypeScript", "Clean Architecture", "Android"]
+                },
+                {
+                  nome: "Brendon Urie",
+                  role: "Senior Backend Engineer",
+                  rate: "R$ 220/h",
+                  avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=150&auto=format&fit=crop",
+                  skills: ["Node.js", "PostgreSQL", "Docker", "AWS"]
+                },
+                {
+                  nome: "Taylor Swift",
+                  role: "Senior UI/UX Designer",
+                  rate: "R$ 280/h",
+                  avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=150&auto=format&fit=crop",
+                  skills: ["Figma", "Design Systems", "Product Design"]
+                }
+              ].map((t, idx) => (
+                <div key={idx} className="preview-talent-card glass-card">
+                  <div className="talent-card-header">
+                    <img src={t.avatar} alt={t.nome} className="talent-avatar" />
+                    <div>
+                      <h4>{t.nome}</h4>
+                      <p>{t.role}</p>
+                    </div>
+                  </div>
+                  <div className="talent-skills">
+                    {t.skills.map((s, sIdx) => <span key={sIdx} className="skill-pill">{s}</span>)}
+                  </div>
+                  <div className="talent-footer">
+                    <span className="talent-rate">{t.rate}</span>
+                    <button className="btn-view-profile" onClick={() => navigate('/login')}>Ver Perfil</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+              <button onClick={() => navigate('/login')} className="btn-secondary glass-card" style={{ display: 'inline-flex', padding: '0.75rem 1.5rem', fontSize: '0.95rem' }}>
+                Ver Todos os 1200+ Talentos
+                <ArrowRight size={16} style={{ marginLeft: '0.5rem' }} />
+              </button>
+            </div>
+          </div>
+        </section>
+
         {/* CTA Section */}
         <section className="cta-section">
           <div className="cta-container glass-card">

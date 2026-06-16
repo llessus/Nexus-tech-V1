@@ -8,9 +8,7 @@ import './Navbar.css';
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Serviços', href: '#services' },
-  { name: 'Soluções', href: '#solutions' },
   { name: 'Sobre', href: '/about' },
-  { name: 'Contato', href: '#contact' },
 ];
 
 const Navbar: React.FC = () => {

@@ -73,6 +73,18 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes, onSearch, onPublica
     onSearch?.(val);
   };
 
+  const handleLogoClick = () => {
+    if (usuario) {
+      if (usuario.tipoConta === 'prestador') {
+        navigate('/provider');
+      } else {
+        navigate('/dashboard');
+      }
+    } else {
+      navigate('/');
+    }
+  };
+
   return (
     <header className="dash-topbar">
       <div className="dash-logo-nav">
@@ -85,14 +97,14 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes, onSearch, onPublica
         >
           <ArrowLeft size={18} />
         </button>
-        <div className="dash-logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+        <div className="dash-logo" onClick={handleLogoClick} style={{ cursor: 'pointer' }}>
           Nexus-Tech
         </div>
         <nav className="dash-nav-links hidden-mobile">
           <a href="#" className="active" onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}>Marketplace</a>
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/about'); }}>Sobre</a>
         </nav>
       </div>
+
 
       <div className="dash-search-container hidden-mobile">
         <Search className="dash-search-icon" size={18} />
