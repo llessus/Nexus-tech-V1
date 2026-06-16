@@ -8,9 +8,10 @@ import './Topbar.css';
 interface TopbarProps {
   onShowContratacoes?: () => void;
   onSearch?: (query: string) => void;
+  onPublicarProjeto?: () => void;
 }
 
-const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes, onSearch }) => {
+const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes, onSearch, onPublicarProjeto }) => {
   const navigate = useNavigate();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -106,13 +107,26 @@ const Topbar: React.FC<TopbarProps> = ({ onShowContratacoes, onSearch }) => {
 
       <div className="dash-actions">
         {usuario?.tipoConta === 'cliente' ? (
-          <button 
-            className="auth-submit-btn hidden-mobile" 
-            style={{ padding: '0.5rem 1rem', marginTop: 0, width: 'auto' }}
-            onClick={onShowContratacoes}
-          >
-            Serviços Contratados
-          </button>
+          <div className="hidden-mobile" style={{ display: 'flex', gap: '0.5rem' }}>
+            <button 
+              className="auth-submit-btn" 
+              style={{ padding: '0.5rem 1rem', marginTop: 0, width: 'auto' }}
+              onClick={onShowContratacoes}
+            >
+              Serviços Contratados
+            </button>
+            <button 
+              style={{ 
+                padding: '0.5rem 1rem', marginTop: 0, width: 'auto',
+                background: 'transparent', border: '1px solid #00e5ff', color: '#00e5ff',
+                borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+              onClick={onPublicarProjeto}
+            >
+              Publicar Projeto
+            </button>
+          </div>
         ) : (
           <button 
             className="auth-submit-btn hidden-mobile" 
