@@ -1,8 +1,8 @@
 /* src/pages/DashboardPage.css */
 
-.dashboard-container {
+.dash-container {
   min-height: 100vh;
-  background-color: #050505; /* Deep black from the image */
+  background-color: #030712; /* Alinhado ao Dark Blue do About/Landing */
   color: white;
   font-family: 'Inter', sans-serif;
   padding-bottom: 4rem;
@@ -119,9 +119,10 @@
 
 /* Main Content */
 .dash-main {
-  max-width: 1200px;
+  max-width: 1440px; /* Layout maior e mais preenchido em monitores grandes */
   margin: 0 auto;
   padding: 2rem;
+  width: 100%;
 }
 
 /* Hero Banner */
@@ -140,7 +141,38 @@
 .dash-hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to right, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.6) 50%, rgba(0, 229, 255, 0.1) 100%);
+  background: linear-gradient(to right, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.55) 55%, rgba(0, 229, 255, 0.05) 100%);
+  z-index: 2;
+}
+
+.dash-hero-video {
+  position: absolute;
+  right: 6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 320px;
+  height: 320px;
+  object-fit: cover;
+  border-radius: 50%;
+  opacity: 0.65;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 0 20px rgba(0, 229, 255, 0.25));
+}
+
+@media (max-width: 992px) {
+  .dash-hero-video {
+    right: 2rem;
+    width: 240px;
+    height: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dash-hero-video {
+    display: none; /* Esconde em telas de celular para não sobrepor texto */
+  }
 }
 
 .dash-hero-content {

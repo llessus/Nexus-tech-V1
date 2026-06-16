@@ -192,13 +192,14 @@ const DashboardPage: React.FC = () => {
       }
     }
 
-    // Search filter: matches name, role, or skills
+    // Search filter: matches name, role, skills, or hourly rate
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchesName = talent.nome.toLowerCase().includes(q);
       const matchesRole = talent.role.toLowerCase().includes(q);
       const matchesSkills = talent.skills.some(s => s.toLowerCase().includes(q));
-      if (!matchesName && !matchesRole && !matchesSkills) return false;
+      const matchesRate = talent.hourlyRate.toString().includes(q);
+      if (!matchesName && !matchesRole && !matchesSkills && !matchesRate) return false;
     }
 
     // Advanced: skill filter
@@ -227,6 +228,14 @@ const DashboardPage: React.FC = () => {
         {/* Welcome Banner */}
         <section className="dash-hero">
           <div className="dash-hero-overlay" />
+          <video 
+            src="/globe.webm" 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            className="dash-hero-video"
+          />
           <div className="dash-hero-content">
             <h1 className="dash-hero-title">
               {firstName ? `Olá, ${capitalize(firstName)}!` : 'Acelere seu próximo'}<br/>

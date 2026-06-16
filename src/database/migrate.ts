@@ -124,6 +124,18 @@ export async function runMigration() {
     brendonId = existingUsers[0].id;
   }
 
+  // Seed de Admin: garante que haja uma conta de administrador
+  const existingAdmin = await sql`SELECT id FROM usuarios WHERE email = 'admin@nexus.tech'`;
+
+  if (existingAdmin.length === 0) {
+    const adminSenhaHash = criarHashSenha('admin123');
+    await sql`
+      INSERT INTO usuarios (nome, email, senha_hash, tipo_conta, avatar_url)
+      VALUES ('Administrador', 'admin@nexus.tech', ${adminSenhaHash}, 'admin', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=150&auto=format&fit=crop')
+    `;
+    console.log('Usuário admin seed criado: admin@nexus.tech / admin123');
+  }
+
   // Seed de talento: garante que Brendon tenha um perfil de talento
   const existingTalent = await sql`SELECT id FROM talentos WHERE email = 'brendon@gmail.com'`;
 
