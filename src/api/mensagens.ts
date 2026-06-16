@@ -17,6 +17,7 @@ export interface ContatoChat {
   ultimaMensagem: string;
   dataUltimaMensagem: string;
   naoLidas: number;
+  avatarUrl?: string | null;
 }
 
 export const enviarMensagem = async (

@@ -44,6 +44,14 @@ const SettingsPage: React.FC = () => {
             setHourlyRate(talento.hourlyRate || 100);
             setSkills(talento.skills ? talento.skills.join(', ') : '');
             setPortfolioImages(talento.portfolioImages || []);
+
+            const metaRaw = localStorage.getItem(`nexus:talent_meta_${talento.id}`);
+            if (metaRaw) {
+              const meta = JSON.parse(metaRaw);
+              setLinkedin(meta.linkedin || '');
+              setGithub(meta.github || '');
+              setPortfolio(meta.portfolio || '');
+            }
           }
         } catch (err) {
           console.error('Erro ao buscar dados de talento:', err);
@@ -135,6 +143,19 @@ const SettingsPage: React.FC = () => {
           skills: skillsArray,
           portfolioImages: portfolioImages.filter(Boolean),
         });
+
+        // Salvar links sociais no localStorage fundindo com o metadado existente
+        const metaRaw = localStorage.getItem(`nexus:talent_meta_${talentoId}`);
+        const existingMeta = metaRaw ? JSON.parse(metaRaw) : {};
+        localStorage.setItem(
+          `nexus:talent_meta_${talentoId}`,
+          JSON.stringify({
+            ...existingMeta,
+            linkedin,
+            github,
+            portfolio
+          })
+        );
       }
 
       addNotification({
@@ -192,18 +213,6 @@ const SettingsPage: React.FC = () => {
               onClick={() => setActiveTab('conta')}
             >
               Conta & Segurança
-            </button>
-            <button 
-              className={`settings-menu-item ${activeTab === 'notificacoes' ? 'active' : ''}`}
-              onClick={() => setActiveTab('notificacoes')}
-            >
-              Notificações
-            </button>
-            <button 
-              className={`settings-menu-item ${activeTab === 'pagamento' ? 'active' : ''}`}
-              onClick={() => setActiveTab('pagamento')}
-            >
-              Pagamento & Faturamento
             </button>
           </div>
 
@@ -452,11 +461,7 @@ const SettingsPage: React.FC = () => {
               </div>
             )}
 
-            {(activeTab === 'notificacoes' || activeTab === 'pagamento') && (
-              <div className="settings-card">
-                <p style={{ color: '#a1a1aa' }}>Esta seção está em desenvolvimento.</p>
-              </div>
-            )}
+
           </div>
         </div>
       </main>

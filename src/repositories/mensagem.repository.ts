@@ -17,6 +17,7 @@ export interface ContatoChat {
   ultimaMensagem: string;
   dataUltimaMensagem: string;
   naoLidas: number;
+  avatarUrl?: string | null;
 }
 
 const toMensagem = (row: any): Mensagem => ({
@@ -89,7 +90,7 @@ export const obterContatosRecentes = async (usuarioId: number): Promise<ContatoC
   const contatos: ContatoChat[] = [];
 
   for (const { outro_id } of interacoes) {
-    const usuarioRows = await sql`SELECT id, nome, email, tipo_conta FROM usuarios WHERE id = ${outro_id}`;
+    const usuarioRows = await sql`SELECT id, nome, email, tipo_conta, avatar_url FROM usuarios WHERE id = ${outro_id}`;
     if (usuarioRows.length === 0) continue;
     const usuarioInfo = usuarioRows[0];
 
@@ -116,6 +117,7 @@ export const obterContatosRecentes = async (usuarioId: number): Promise<ContatoC
       ultimaMensagem: ultimaMsg?.conteudo || '',
       dataUltimaMensagem: ultimaMsg?.created_at ? new Date(ultimaMsg.created_at).toISOString() : '',
       naoLidas: naoLidasRows[0]?.count ?? 0,
+      avatarUrl: usuarioInfo.avatar_url,
     });
   }
 
@@ -132,7 +134,7 @@ export const obterContatosRecentes = async (usuarioId: number): Promise<ContatoC
     if (!c.outro_usuario_id || c.outro_usuario_id === usuarioId) continue;
     if (contatos.some(con => con.id === c.outro_usuario_id)) continue;
 
-    const usuarioRows = await sql`SELECT id, nome, email, tipo_conta FROM usuarios WHERE id = ${c.outro_usuario_id}`;
+    const usuarioRows = await sql`SELECT id, nome, email, tipo_conta, avatar_url FROM usuarios WHERE id = ${c.outro_usuario_id}`;
     if (usuarioRows.length === 0) continue;
     const usuarioInfo = usuarioRows[0];
 
@@ -144,6 +146,7 @@ export const obterContatosRecentes = async (usuarioId: number): Promise<ContatoC
       ultimaMensagem: '',
       dataUltimaMensagem: '',
       naoLidas: 0,
+      avatarUrl: usuarioInfo.avatar_url,
     });
   }
 

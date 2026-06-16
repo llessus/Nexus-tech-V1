@@ -30,16 +30,10 @@ import { obterProjetos, Projeto } from '../utils/projects';
 import { addNotification } from '../utils/notifications';
 import './ProviderDashboardPage.css';
 
-// Mock de projetos estáticos iniciais do dev
-const initialProjects = [
-  { title: 'Nexus-Tech UI Design', client: 'Nexus Global Systems', progress: 75, status: 'Em andamento', team: ['B', 'C'] },
-  { title: 'API Gateway Integration', client: 'Flow State Dynamics', progress: 40, status: 'Em andamento', team: ['B'] },
-  { title: 'Cloud Infrastructure Setup', client: 'Stellar Cloud', progress: 15, status: 'Pausado', team: [] },
-];
-
+// Estados para projetos ativos interativos
 const ProviderDashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [active, setActive] = useState('painel'); // 'painel' | 'projetos' | 'financas'
+  const [active, setActive] = useState('painel'); // 'painel' | 'projetos' | 'financas' | 'gerenciar-projeto'
   const usuario = getUsuarioLogado();
   
   // Estados para contratações (propostas/projetos diretos)
@@ -51,49 +45,289 @@ const ProviderDashboardPage: React.FC = () => {
   const [muralProjetos, setMuralProjetos] = useState<Projeto[]>([]);
   const [filtroMural, setFiltroMural] = useState('Todos');
 
+  // Projetos ativos em localStorage
+  const [activeProjects, setActiveProjects] = useState<any[]>([]);
+  const [selectedProject, setSelectedProject] = useState<any | null>(null);
+
   useEffect(() => {
-    const carregarDados = async () => {
-      if (!usuario?.id) return;
+    if (!usuario?.id) return;
+
+    // 1. Carrega os projetos ativos do localStorage
+    const localKey = `nexus:active_projects_${usuario.id}`;
+    let localData = localStorage.getItem(localKey);
+    let projectsList = [];
+
+    if (localData) {
+      projectsList = JSON.parse(localData);
+    } else {
+      // Seed inicial de projetos
+      projectsList = [
+        { 
+          id: 'mock-1', 
+          title: 'Nexus-Tech UI Design', 
+          client: 'Nexus Global Systems', 
+          clientEmail: 'contato@nexus.com',
+          clientId: 1,
+          progress: 75, 
+          status: 'Em andamento', 
+          team: ['B', 'C'],
+          milestones: [
+            { id: 1, text: 'Definição do Design System', checked: true },
+            { id: 2, text: 'Prototipação das telas principais', checked: true },
+            { id: 3, text: 'Validação com usuários', checked: false },
+            { id: 4, text: 'Entrega dos assets figma', checked: false }
+          ],
+          logs: ['[12/06/2026] Projeto iniciado.', '[14/06/2026] Definição de Design System concluída.', '[15/06/2026] Wireframes entregues e aprovados.']
+        },
+        { 
+          id: 'mock-2', 
+          title: 'API Gateway Integration', 
+          client: 'Flow State Dynamics', 
+          clientEmail: 'devs@flowstate.com',
+          clientId: 2,
+          progress: 40, 
+          status: 'Em andamento', 
+          team: ['B'],
+          milestones: [
+            { id: 1, text: 'Mapeamento das rotas', checked: true },
+            { id: 2, text: 'Configuração do Kong Gateway', checked: false },
+            { id: 3, text: 'Testes de carga e latência', checked: false }
+          ],
+          logs: ['[10/06/2026] Definição inicial das rotas API concluída.']
+        },
+        { 
+          id: 'mock-3', 
+          title: 'Cloud Infrastructure Setup', 
+          client: 'Stellar Cloud', 
+          clientEmail: 'stellar@cloud.com',
+          clientId: 3,
+          progress: 15, 
+          status: 'Pausado', 
+          team: [],
+          milestones: [
+            { id: 1, text: 'Definição da arquitetura AWS', checked: true },
+            { id: 2, text: 'Escrita de scripts Terraform', checked: false }
+          ],
+          logs: ['[08/06/2026] Infraestrutura inicial configurada.', '[09/06/2026] Pausado aguardando liberação de chaves AWS pelo cliente.']
+        },
+      ];
+      localStorage.setItem(localKey, JSON.stringify(projectsList));
+    }
+
+    const carregarDados = async (currentList: any[]) => {
       try {
         const talento = await obterTalentoPorUsuarioId(usuario.id);
         if (talento) {
           setTalentoId(talento.id);
           const dados = await listarContratacoesPorTalento(talento.id);
           setContratacoes(dados);
+
+          // Sincronizar contratações "Aceito" com localStorage de projetos ativos
+          const aceitas = dados.filter(c => c.status === 'Aceito');
+          let updated = [...currentList];
+          let changed = false;
+
+          for (const c of aceitas) {
+            const exists = updated.some(p => p.id === `contract-${c.id}`);
+            if (!exists) {
+              updated.push({
+                id: `contract-${c.id}`,
+                contractId: c.id,
+                title: `Desenvolvimento de Software para ${c.clienteNome}`,
+                client: c.clienteNome,
+                clientEmail: c.clienteEmail || '',
+                clientId: c.clienteId,
+                progress: 0,
+                status: 'Em andamento',
+                team: [usuario.nome ? usuario.nome[0].toUpperCase() : 'D'],
+                milestones: [
+                  { id: 1, text: 'Kickoff do projeto', checked: false },
+                  { id: 2, text: 'Desenvolvimento das Sprints', checked: false },
+                  { id: 3, text: 'Entrega final', checked: false }
+                ],
+                logs: [`[${new Date(c.createdAt).toLocaleDateString('pt-BR')}] Contratação direta aceita. Projeto iniciado com orçamento de R$ ${c.valorTotal.toFixed(2)}`]
+              });
+              changed = true;
+            }
+          }
+
+          if (changed) {
+            localStorage.setItem(localKey, JSON.stringify(updated));
+            setActiveProjects(updated);
+          } else {
+            setActiveProjects(currentList);
+          }
         }
       } catch (err) {
         console.error('Erro ao buscar dados do desenvolvedor:', err);
+        setActiveProjects(currentList);
       } finally {
         setLoadingContratacoes(false);
       }
     };
-    
-    carregarDados();
+
+    carregarDados(projectsList);
     // Carrega projetos do Mural
     setMuralProjetos(obterProjetos());
   }, [usuario?.id]);
 
-  // Filtra contratações com status "Confirmado" (que vieram da contratação do cliente e precisam de aceitação)
+  // Filtra contratações com status "Confirmado"
   const propostasPendentes = useMemo(() => {
     return contratacoes.filter(c => c.status === 'Confirmado');
   }, [contratacoes]);
 
-  // Projetos dinâmicos a partir das contratações aceitas pelo dev
-  const projetosAtivosDinamicos = useMemo(() => {
-    const aceitas = contratacoes.filter(c => c.status === 'Aceito');
-    return aceitas.map(c => ({
-      title: `Desenvolvimento de Software para ${c.clienteNome}`,
-      client: c.clienteNome,
-      progress: 0,
-      status: 'Em andamento',
-      team: [usuario?.nome ? usuario.nome[0].toUpperCase() : 'D']
-    }));
-  }, [contratacoes, usuario]);
+  // Métodos de Gerenciamento do Projeto
+  const saveProjectChanges = (updatedProj: any) => {
+    if (!usuario?.id) return;
+    const localKey = `nexus:active_projects_${usuario.id}`;
+    const localData = localStorage.getItem(localKey);
+    if (localData) {
+      const list = JSON.parse(localData);
+      const idx = list.findIndex((p: any) => p.id === updatedProj.id);
+      if (idx !== -1) {
+        list[idx] = updatedProj;
+        localStorage.setItem(localKey, JSON.stringify(list));
+        setActiveProjects(list);
+      }
+    }
+  };
 
-  // Lista combinada de projetos ativos (estáticos + dinâmicos aceitos)
-  const todosProjetosAtivos = useMemo(() => {
-    return [...projetosAtivosDinamicos, ...initialProjects];
-  }, [projetosAtivosDinamicos]);
+  const handleUpdateProgress = (progress: number) => {
+    if (!selectedProject) return;
+    const updated = { ...selectedProject, progress };
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+  };
+
+  const handleToggleMilestone = (milestoneId: number) => {
+    if (!selectedProject) return;
+    const updatedMilestones = selectedProject.milestones.map((m: any) => {
+      if (m.id === milestoneId) {
+        return { ...m, checked: !m.checked };
+      }
+      return m;
+    });
+
+    const autoCheckInput = document.getElementById('auto-progress-checkbox') as HTMLInputElement;
+    const isAutoChecked = autoCheckInput ? autoCheckInput.checked : true;
+    let progress = selectedProject.progress;
+    if (isAutoChecked && updatedMilestones.length > 0) {
+      const checkedCount = updatedMilestones.filter((m: any) => m.checked).length;
+      progress = Math.round((checkedCount / updatedMilestones.length) * 100);
+    }
+
+    const updated = { 
+      ...selectedProject, 
+      milestones: updatedMilestones,
+      progress 
+    };
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+  };
+
+  const handleDeleteMilestone = (milestoneId: number) => {
+    if (!selectedProject) return;
+    const updatedMilestones = selectedProject.milestones.filter((m: any) => m.id !== milestoneId);
+
+    const autoCheckInput = document.getElementById('auto-progress-checkbox') as HTMLInputElement;
+    const isAutoChecked = autoCheckInput ? autoCheckInput.checked : true;
+    let progress = selectedProject.progress;
+    if (isAutoChecked && updatedMilestones.length > 0) {
+      const checkedCount = updatedMilestones.filter((m: any) => m.checked).length;
+      progress = Math.round((checkedCount / updatedMilestones.length) * 100);
+    } else if (updatedMilestones.length === 0) {
+      progress = 0;
+    }
+
+    const updated = { 
+      ...selectedProject, 
+      milestones: updatedMilestones,
+      progress 
+    };
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+  };
+
+  const handleAddMilestone = (text: string) => {
+    if (!selectedProject) return;
+    const newId = selectedProject.milestones.length > 0 
+      ? Math.max(...selectedProject.milestones.map((m: any) => m.id)) + 1 
+      : 1;
+
+    const newMilestone = { id: newId, text, checked: false };
+    const updatedMilestones = [...selectedProject.milestones, newMilestone];
+
+    const autoCheckInput = document.getElementById('auto-progress-checkbox') as HTMLInputElement;
+    const isAutoChecked = autoCheckInput ? autoCheckInput.checked : true;
+    let progress = selectedProject.progress;
+    if (isAutoChecked && updatedMilestones.length > 0) {
+      const checkedCount = updatedMilestones.filter((m: any) => m.checked).length;
+      progress = Math.round((checkedCount / updatedMilestones.length) * 100);
+    }
+
+    const updated = { 
+      ...selectedProject, 
+      milestones: updatedMilestones,
+      progress 
+    };
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+  };
+
+  const handleAddLog = (logText: string) => {
+    if (!selectedProject) return;
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const newLog = `[${dateStr}] ${logText}`;
+    const updatedLogs = [newLog, ...(selectedProject.logs || [])];
+    
+    const updated = { ...selectedProject, logs: updatedLogs };
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+  };
+
+  const handleToggleProjectStatus = () => {
+    if (!selectedProject) return;
+    const newStatus = selectedProject.status === 'Pausado' ? 'Em andamento' : 'Pausado';
+    const logMsg = `Status do projeto alterado para: ${newStatus}`;
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const newLog = `[${dateStr}] ${logMsg}`;
+
+    const updated = { 
+      ...selectedProject, 
+      status: newStatus,
+      logs: [newLog, ...(selectedProject.logs || [])]
+    };
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+  };
+
+  const handleCompleteProject = () => {
+    if (!selectedProject) return;
+    const updatedMilestones = selectedProject.milestones.map((m: any) => ({ ...m, checked: true }));
+    const dateStr = new Date().toLocaleDateString('pt-BR');
+    const logMsg = `[${dateStr}] Projeto concluído e entregue com sucesso!`;
+
+    const updated = {
+      ...selectedProject,
+      status: 'Concluído',
+      progress: 100,
+      milestones: updatedMilestones,
+      logs: [logMsg, ...(selectedProject.logs || [])]
+    };
+    setSelectedProject(updated);
+    saveProjectChanges(updated);
+
+    addNotification({
+      type: 'system',
+      title: 'Projeto Entregue!',
+      description: `O projeto "${selectedProject.title}" foi concluído e notificado ao cliente.`,
+    });
+  };
+
+  const handleGerenciarProjeto = (project: any) => {
+    setSelectedProject(project);
+    setActive('gerenciar-projeto');
+  };
 
   const firstName = useMemo(() => usuario?.nome?.split(' ')[0] || 'Brendon', [usuario]);
   const initials = useMemo(() => {
@@ -134,6 +368,35 @@ const ProviderDashboardPage: React.FC = () => {
       if (talentoId) {
         const dados = await listarContratacoesPorTalento(talentoId);
         setContratacoes(dados);
+
+        // Adicionar novo projeto ao localStorage imediatamente
+        const localKey = `nexus:active_projects_${usuario?.id}`;
+        const localData = localStorage.getItem(localKey);
+        let projectsList = localData ? JSON.parse(localData) : [];
+        
+        const c = dados.find(x => x.id === id);
+        if (c && !projectsList.some((p: any) => p.id === `contract-${c.id}`)) {
+          const newProj = {
+            id: `contract-${c.id}`,
+            contractId: c.id,
+            title: `Desenvolvimento de Software para ${c.clienteNome}`,
+            client: c.clienteNome,
+            clientEmail: c.clienteEmail || '',
+            clientId: c.clienteId,
+            progress: 0,
+            status: 'Em andamento',
+            team: [usuario?.nome ? usuario.nome[0].toUpperCase() : 'D'],
+            milestones: [
+              { id: 1, text: 'Kickoff do projeto', checked: false },
+              { id: 2, text: 'Desenvolvimento das Sprints', checked: false },
+              { id: 3, text: 'Entrega final', checked: false }
+            ],
+            logs: [`[${new Date().toLocaleDateString('pt-BR')}] Contratação direta aceita. Projeto iniciado com orçamento de R$ ${c.valorTotal.toFixed(2)}`]
+          };
+          const newList = [...projectsList, newProj];
+          localStorage.setItem(localKey, JSON.stringify(newList));
+          setActiveProjects(newList);
+        }
       }
     } catch (err) {
       console.error('Erro ao aceitar contratação:', err);
@@ -194,9 +457,9 @@ const ProviderDashboardPage: React.FC = () => {
       totalRecebido,
       saldoPendente: 3400.00 + valorPendente,
       payoutAgendado: 1250.00,
-      totalProjetos: todosProjetosAtivos.length
+      totalProjetos: activeProjects.length
     };
-  }, [contratacoes, todosProjetosAtivos]);
+  }, [contratacoes, activeProjects]);
 
   return (
     <div className="provider-shell">
@@ -338,19 +601,19 @@ const ProviderDashboardPage: React.FC = () => {
             >
               <section className="provider-projects">
                 <div className="provider-section-title">
-                  <h2>Projetos Ativos ({todosProjetosAtivos.length})</h2>
+                  <h2>Projetos Ativos ({activeProjects.length})</h2>
                   <button className="link-hover">Ver todos</button>
                 </div>
 
                 <div className="projects-list">
-                  {todosProjetosAtivos.map((project, idx) => (
-                    <article className={`provider-project-card scale-hover ${project.status === 'Pausado' ? 'muted' : ''}`} key={idx}>
+                  {activeProjects.map((project, idx) => (
+                    <article className={`provider-project-card scale-hover ${project.status === 'Pausado' ? 'muted' : ''} ${project.status === 'Concluído' ? 'completed-card' : ''}`} key={project.id || idx}>
                       <div className="provider-project-head">
                         <div>
                           <h3>{project.title}</h3>
                           <p>Cliente: <strong>{project.client}</strong></p>
                         </div>
-                        <span className={`status-badge ${project.status === 'Pausado' ? 'paused' : 'active'}`}>{project.status}</span>
+                        <span className={`status-badge ${project.status === 'Pausado' ? 'paused' : project.status === 'Concluído' ? 'completed' : 'active'}`}>{project.status}</span>
                       </div>
                       <div className="provider-progress-line">
                         <label>Progresso de Entrega</label>
@@ -361,10 +624,13 @@ const ProviderDashboardPage: React.FC = () => {
                       </div>
                       <footer>
                         <div className="provider-team">
-                          {project.team.length ? project.team.map((member, mIdx) => <span key={mIdx}>{member}</span>) : <small>Sem equipe ativa</small>}
+                          {project.team && project.team.length ? project.team.map((member, mIdx) => <span key={mIdx}>{member}</span>) : <small>Sem equipe ativa</small>}
                         </div>
-                        <button className="btn-cyan-sm">
-                          {project.status === 'Pausado' ? 'Retomar' : 'Gerenciar'}
+                        <button 
+                          className="btn-cyan-sm"
+                          onClick={() => handleGerenciarProjeto(project)}
+                        >
+                          {project.status === 'Pausado' ? 'Retomar' : project.status === 'Concluído' ? 'Visualizar' : 'Gerenciar'}
                         </button>
                       </footer>
                     </article>
@@ -665,6 +931,273 @@ const ProviderDashboardPage: React.FC = () => {
                   </article>
                 </div>
               </section>
+            </div>
+          </div>
+        )}
+
+        {/* ================= TAB 4: GERENCIAR PROJETO ================= */}
+        {active === 'gerenciar-projeto' && selectedProject && (
+          <div className="tab-pane fade-in gerenciar-projeto-container">
+            <button 
+              className="btn-voltar-painel" 
+              onClick={() => {
+                // Recarrega a lista do localStorage para garantir a sincronia de tudo
+                const localKey = `nexus:active_projects_${usuario?.id}`;
+                const localData = localStorage.getItem(localKey);
+                if (localData) {
+                  setActiveProjects(JSON.parse(localData));
+                }
+                setActive('painel');
+                setSelectedProject(null);
+              }}
+            >
+              <ArrowLeft size={16} />
+              Voltar ao Painel
+            </button>
+
+            <div className="projeto-detalhes-grid">
+              {/* Coluna Principal: Milestones & Diário */}
+              <div className="projeto-col-main">
+                <div className="projeto-card-header-detalhe">
+                  <div className="projeto-title-block">
+                    <span className="projeto-badge-status-top">{selectedProject.status}</span>
+                    <h2>{selectedProject.title}</h2>
+                    <p>Cliente: <strong>{selectedProject.client}</strong> {selectedProject.clientEmail && `(${selectedProject.clientEmail})`}</p>
+                  </div>
+                </div>
+
+                {/* Card de Progresso */}
+                <div className="projeto-gerenciar-card">
+                  <div className="gerenciar-card-head">
+                    <h3>Progresso de Entrega</h3>
+                    <span className="progress-value-huge">{selectedProject.progress}%</span>
+                  </div>
+                  <div className="provider-progress-track large-track" style={{ height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '999px', overflow: 'hidden' }}>
+                    <div style={{ width: `${selectedProject.progress}%`, background: 'linear-gradient(90deg, #0077ff, #00e5ff)', height: '100%', borderRadius: '999px', boxShadow: '0 0 10px rgba(0, 229, 255, 0.5)' }} />
+                  </div>
+                  
+                  {/* Slider Interativo de Progresso */}
+                  {selectedProject.status !== 'Concluído' && (
+                    <div className="slider-container-gerenciar" style={{ marginTop: '1.5rem' }}>
+                      <label className="settings-label" style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                        <span>Ajustar Progresso Manualmente</span>
+                        <span>{selectedProject.progress}%</span>
+                      </label>
+                      <input 
+                        type="range" 
+                        min="0" 
+                        max="100" 
+                        value={selectedProject.progress} 
+                        onChange={(e) => handleUpdateProgress(Number(e.target.value))}
+                        className="progress-range-slider"
+                        style={{ width: '100%', cursor: 'pointer', height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px' }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Card de Milestones */}
+                <div className="projeto-gerenciar-card">
+                  <div className="gerenciar-card-head" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <h3>Metas & Sprints (Milestones)</h3>
+                      <p style={{ fontSize: '11px', color: '#71717a', margin: '0.2rem 0 0' }}>Marcar metas concluídas ajusta o progresso automaticamente</p>
+                    </div>
+                    {selectedProject.status !== 'Concluído' && (
+                      <div className="auto-progress-toggle" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <input 
+                          type="checkbox" 
+                          id="auto-progress-checkbox" 
+                          defaultChecked={true}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <label htmlFor="auto-progress-checkbox" style={{ fontSize: '11px', color: '#a1a1aa', cursor: 'pointer', userSelect: 'none' }}>Auto-calcular progresso</label>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="milestones-checklist" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {selectedProject.milestones && selectedProject.milestones.length > 0 ? (
+                      selectedProject.milestones.map((m: any) => (
+                        <div key={m.id} className={`milestone-item-row ${m.checked ? 'checked' : ''}`} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={m.checked}
+                            onChange={() => handleToggleMilestone(m.id)}
+                            disabled={selectedProject.status === 'Concluído'}
+                            style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                          />
+                          <span className="milestone-text" style={{ flex: 1, fontSize: '13px', color: m.checked ? '#71717a' : '#fff', textDecoration: m.checked ? 'line-through' : 'none' }}>{m.text}</span>
+                          {selectedProject.status !== 'Concluído' && (
+                            <button 
+                              className="btn-delete-milestone" 
+                              onClick={() => handleDeleteMilestone(m.id)}
+                              title="Excluir meta"
+                              style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="no-data-msg" style={{ fontSize: '12px', color: '#71717a' }}>Nenhuma milestone cadastrada.</p>
+                    )}
+                  </div>
+
+                  {selectedProject.status !== 'Concluído' && (
+                    <div className="add-milestone-form" style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+                      <input 
+                        type="text" 
+                        id="new-milestone-input"
+                        className="settings-input" 
+                        placeholder="Adicionar nova meta ou sprint..." 
+                        style={{ flex: 1, marginTop: 0 }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = (e.target as HTMLInputElement).value;
+                            if (val.trim()) {
+                              handleAddMilestone(val.trim());
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <button 
+                        type="button" 
+                        className="btn-cyan-sm" 
+                        style={{ height: '38px', whiteSpace: 'nowrap' }}
+                        onClick={() => {
+                          const input = document.getElementById('new-milestone-input') as HTMLInputElement;
+                          if (input && input.value.trim()) {
+                            handleAddMilestone(input.value.trim());
+                            input.value = '';
+                          }
+                        }}
+                      >
+                        + Adicionar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Card do Diário de Bordo (Logs) */}
+                <div className="projeto-gerenciar-card">
+                  <h3>Diário de Bordo & Sprints</h3>
+                  <p style={{ fontSize: '11px', color: '#71717a', marginBottom: '1rem' }}>Registre atividades e avanços do projeto para consulta e transparência</p>
+
+                  <div className="timeline-logs" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '1rem', marginLeft: '0.5rem', marginTop: '1rem' }}>
+                    {selectedProject.logs && selectedProject.logs.length > 0 ? (
+                      selectedProject.logs.map((log: string, lIdx: number) => (
+                        <div key={lIdx} className="timeline-log-item" style={{ position: 'relative' }}>
+                          <div className="log-marker" style={{ position: 'absolute', left: 'calc(-1rem - 4.5px)', top: '6px', width: '8px', height: '8px', borderRadius: '50%', background: '#00e5ff', boxShadow: '0 0 6px #00e5ff' }} />
+                          <div className="log-content-wrapper" style={{ fontSize: '12px', color: '#d4d4d8', lineHeight: '1.4' }}>
+                            <p style={{ margin: 0 }}>{log}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="no-data-msg" style={{ fontSize: '12px', color: '#71717a' }}>Nenhum registro ainda.</p>
+                    )}
+                  </div>
+
+                  {selectedProject.status !== 'Concluído' && (
+                    <div className="add-log-form" style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+                      <input 
+                        type="text" 
+                        id="new-log-input"
+                        className="settings-input" 
+                        placeholder="Ex: Finalizei o mockup das telas..." 
+                        style={{ flex: 1, marginTop: 0 }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = (e.target as HTMLInputElement).value;
+                            if (val.trim()) {
+                              handleAddLog(val.trim());
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                        }}
+                      />
+                      <button 
+                        type="button" 
+                        className="btn-cyan-sm"
+                        style={{ height: '38px', whiteSpace: 'nowrap' }}
+                        onClick={() => {
+                          const input = document.getElementById('new-log-input') as HTMLInputElement;
+                          if (input && input.value.trim()) {
+                            handleAddLog(input.value.trim());
+                            input.value = '';
+                          }
+                        }}
+                      >
+                        Registrar
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Coluna Lateral: Ações e Detalhes */}
+              <div className="projeto-col-side" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="projeto-gerenciar-card bg-highlight" style={{ background: 'rgba(0,229,255,0.02)', border: '1px solid rgba(0,229,255,0.1)' }}>
+                  <h3>Ações Rápidas</h3>
+                  <div className="side-actions-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
+                    {selectedProject.status !== 'Concluído' && (
+                      <button 
+                        className="btn-side-action"
+                        onClick={handleToggleProjectStatus}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s' }}
+                      >
+                        <Clock size={16} />
+                        {selectedProject.status === 'Pausado' ? 'Retomar Projeto' : 'Pausar Projeto'}
+                      </button>
+                    )}
+
+                    {selectedProject.status !== 'Concluído' && (
+                      <button 
+                        className="btn-side-action highlight-complete"
+                        onClick={handleCompleteProject}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: '#00e5ff', border: 'none', borderRadius: '8px', color: '#000', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer', transition: 'all 0.2s' }}
+                      >
+                        <Check size={16} />
+                        Finalizar Projeto (100%)
+                      </button>
+                    )}
+
+                    {selectedProject.clientId && (
+                      <button 
+                        className="btn-side-action"
+                        onClick={() => {
+                          navigate(`/chat?usuarioId=${selectedProject.clientId}&nome=${encodeURIComponent(selectedProject.client)}&email=${encodeURIComponent(selectedProject.clientEmail || '')}&tipoConta=cliente`);
+                        }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', color: '#fff', fontSize: '13px', cursor: 'pointer', transition: 'all 0.2s' }}
+                      >
+                        <MessageSquare size={16} />
+                        Abrir Chat com Cliente
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="projeto-gerenciar-card">
+                  <h3>Informações de Faturamento</h3>
+                  <div className="info-billing-detail" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#a1a1aa' }}>Orçamento:</span>
+                      <strong>R$ 8.500,00</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#a1a1aa' }}>Método:</span>
+                      <strong>Nexus Escrow Garantia</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#a1a1aa' }}>Liberação:</span>
+                      <strong>Na conclusão do projeto</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

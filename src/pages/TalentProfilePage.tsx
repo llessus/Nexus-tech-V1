@@ -8,7 +8,9 @@ import {
   Save,
   X,
   Sparkles,
-  BookOpen
+  BookOpen,
+  Linkedin,
+  Github
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Topbar from '../components/Topbar';
@@ -38,6 +40,9 @@ const TalentProfilePage: React.FC = () => {
   const [editPortfolioImages, setEditPortfolioImages] = useState<string[]>([]);
   const [editLocation, setEditLocation] = useState('');
   const [editLanguages, setEditLanguages] = useState('');
+  const [editLinkedin, setEditLinkedin] = useState('');
+  const [editGithub, setEditGithub] = useState('');
+  const [editPortfolio, setEditPortfolio] = useState('');
   
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPortfolioIdx, setUploadingPortfolioIdx] = useState<number | null>(null);
@@ -62,9 +67,15 @@ const TalentProfilePage: React.FC = () => {
           const meta = JSON.parse(metaRaw);
           setEditLocation(meta.location || '');
           setEditLanguages(meta.languages || '');
+          setEditLinkedin(meta.linkedin || '');
+          setEditGithub(meta.github || '');
+          setEditPortfolio(meta.portfolio || '');
         } else {
           setEditLocation(data.id % 2 === 0 ? "Remoto" : "São Paulo");
           setEditLanguages("Português, Inglês");
+          setEditLinkedin('');
+          setEditGithub('');
+          setEditPortfolio('');
         }
         
         setLoading(false);
@@ -161,10 +172,13 @@ const TalentProfilePage: React.FC = () => {
         portfolioImages: editPortfolioImages.filter(Boolean)
       });
 
-      // Save location and languages to localStorage
+      // Save location, languages and social links to localStorage
       localStorage.setItem(`nexus:talent_meta_${talent.id}`, JSON.stringify({
         location: editLocation,
-        languages: editLanguages
+        languages: editLanguages,
+        linkedin: editLinkedin,
+        github: editGithub,
+        portfolio: editPortfolio
       }));
 
       if (updated) {
@@ -204,9 +218,15 @@ const TalentProfilePage: React.FC = () => {
       const meta = JSON.parse(metaRaw);
       setEditLocation(meta.location || '');
       setEditLanguages(meta.languages || '');
+      setEditLinkedin(meta.linkedin || '');
+      setEditGithub(meta.github || '');
+      setEditPortfolio(meta.portfolio || '');
     } else {
       setEditLocation(talent.id % 2 === 0 ? "Remoto" : "São Paulo");
       setEditLanguages("Português, Inglês");
+      setEditLinkedin('');
+      setEditGithub('');
+      setEditPortfolio('');
     }
 
     setIsEditing(false);
@@ -346,6 +366,60 @@ const TalentProfilePage: React.FC = () => {
                   )}
                 </div>
               </div>
+
+              {/* Modo de Visualização dos Links Sociais */}
+              {!isEditing && (editLinkedin || editGithub || editPortfolio) && (
+                <div className="profile-social-links">
+                  {editLinkedin && (
+                    <a href={editLinkedin.startsWith('http') ? editLinkedin : `https://${editLinkedin}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
+                      <Linkedin size={16} />
+                      <span>LinkedIn</span>
+                    </a>
+                  )}
+                  {editGithub && (
+                    <a href={editGithub.startsWith('http') ? editGithub : `https://${editGithub}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
+                      <Github size={16} />
+                      <span>GitHub</span>
+                    </a>
+                  )}
+                  {editPortfolio && (
+                    <a href={editPortfolio.startsWith('http') ? editPortfolio : `https://${editPortfolio}`} target="_blank" rel="noopener noreferrer" className="profile-social-link">
+                      <Globe size={16} />
+                      <span>Portfólio</span>
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Modo de Edição dos Links Sociais */}
+              {isEditing && (
+                <div className="profile-edit-social-inputs" style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                  <input 
+                    type="text" 
+                    value={editLinkedin} 
+                    onChange={e => setEditLinkedin(e.target.value)} 
+                    className="profile-inline-input" 
+                    style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', width: '150px' }}
+                    placeholder="LinkedIn (URL ou usuário)"
+                  />
+                  <input 
+                    type="text" 
+                    value={editGithub} 
+                    onChange={e => setEditGithub(e.target.value)} 
+                    className="profile-inline-input" 
+                    style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', width: '150px' }}
+                    placeholder="GitHub (URL ou usuário)"
+                  />
+                  <input 
+                    type="text" 
+                    value={editPortfolio} 
+                    onChange={e => setEditPortfolio(e.target.value)} 
+                    className="profile-inline-input" 
+                    style={{ fontSize: '0.8rem', padding: '0.2rem 0.5rem', width: '150px' }}
+                    placeholder="Portfólio URL"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

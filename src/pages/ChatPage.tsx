@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Send, Search, UserCircle2, ArrowLeft, Loader2, Home } from 'lucide-react';
+import { Send, Search, UserCircle2, ArrowLeft, Loader2, Home, Image as ImageIcon, Mic, Smile, Play, Pause, X } from 'lucide-react';
 import Topbar from '../components/Topbar';
 import { getUsuarioLogado } from '../api/auth';
 import { obterTalentoPorId } from '../api/talentos';
@@ -13,6 +13,73 @@ import {
   Mensagem 
 } from '../api/mensagens';
 import './ChatPage.css';
+
+// Tech-themed animated GIFs and stickers placeholders
+const TECH_GIFS = [
+  { name: 'Coding', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHBhM2g5dGpwOWYwd2d1NWF5czNpZG5wZnN2a3I0dzhhZ3hnbjQ0ciZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3zhxq2ttgN6rEw8Clg/giphy.gif' },
+  { name: 'Working Hard', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM2F3NGM1am02bDVydHR5azVlNG81NXBmdTFmZmtzbnpkZjh1dWR0NyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26tn33aiTi1jkl6H6/giphy.gif' },
+  { name: 'Mind Blown', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExczJmN2ZzZjJzY2lxa2FudGNrbDRid2Vrb21tdWZtYzhxN3J0dzU5ayZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2XHFQOPshWNckg/giphy.gif' },
+  { name: 'Success', url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2JpbmFzcmZ4eTh2dWd6MG52ZW5pM2JocHR3ZnphMDJleWRxY2s0biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/kyLYXonQpkUsMs3LJ5/giphy.gif' }
+];
+
+const TECH_STICKERS = [
+  { name: 'Rocket', url: 'https://api.placeholder.com/120/120?text=%F0%9F%9A%80' },
+  { name: 'Code', url: 'https://api.placeholder.com/120/120?text=%F0%9F%92%BB' },
+  { name: 'Sparkles', url: 'https://api.placeholder.com/120/120?text=%E2%9C%A8' },
+  { name: 'Nexus', url: 'https://api.placeholder.com/120/120?text=Nexus' }
+];
+
+// Sub-component for playing simulated voice messages
+const AudioMessagePlayer: React.FC<{ url: string }> = ({ url }) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState('0:12');
+
+  useEffect(() => {
+    let timer: any;
+    if (isPlaying) {
+      timer = setInterval(() => {
+        setProgress((p) => {
+          if (p >= 100) {
+            setIsPlaying(false);
+            return 0;
+          }
+          return p + 4;
+        });
+      }, 200);
+    }
+    return () => clearInterval(timer);
+  }, [isPlaying]);
+
+  return (
+    <div className="chat-audio-player-card">
+      <button 
+        type="button" 
+        onClick={() => setIsPlaying(!isPlaying)}
+        className="audio-play-btn"
+      >
+        {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" style={{ marginLeft: '2px' }} />}
+      </button>
+      <div className="audio-wave-visualizer">
+        {[30, 70, 50, 90, 40, 80, 60, 95, 35, 75, 55, 85, 45, 65, 30].map((height, barIdx) => {
+          const barProgress = (barIdx / 15) * 100;
+          const active = progress > barProgress;
+          return (
+            <div 
+              key={barIdx} 
+              className="audio-wave-bar"
+              style={{ 
+                height: `${height}%`, 
+                background: active ? '#00e5ff' : 'rgba(255, 255, 255, 0.2)', 
+              }} 
+            />
+          );
+        })}
+      </div>
+      <span className="audio-duration-txt">{duration}</span>
+    </div>
+  );
+};
 
 const ChatPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,7 +96,33 @@ const ChatPage: React.FC = () => {
   const [loadingConversa, setLoadingConversa] = useState(false);
   const [isSending, setIsSending] = useState(false);
 
+  // Additional states for media chat
+  const [isUploading, setIsUploading] = useState(false);
+  const [showGifPanel, setShowGifPanel] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const isImageUrl = (url: string) => {
+    const imageRegex = /^(https?:\/\/.*\.(?:png|jpg|jpeg|gif|webp|svg)(?:\?.*)?)$/i;
+    return imageRegex.test(url) || (url.startsWith('http') && (url.includes('public.blob.vercel-storage.com') || url.includes('/api/placeholder')));
+  };
+
+  const renderMessageContent = (content: string) => {
+    if (content.startsWith('[AUDIO]:')) {
+      const url = content.replace('[AUDIO]:', '');
+      return <AudioMessagePlayer url={url} />;
+    }
+    if (isImageUrl(content)) {
+      return (
+        <div className="chat-message-image-card">
+          <img src={content} alt="Imagem do Chat" />
+        </div>
+      );
+    }
+    return <p>{content}</p>;
+  };
 
   // Redireciona se deslogado
   useEffect(() => {
@@ -195,6 +288,73 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !usuarioLogado || !contatoSelecionado) return;
+
+    setIsUploading(true);
+    try {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+        method: 'POST',
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao enviar imagem.');
+      }
+
+      const data = await response.json();
+      
+      const msg = await enviarMensagem(usuarioLogado.id, contatoSelecionado.id, data.url);
+      setMensagens(prev => [...prev, msg]);
+      carregarListaContatos(contatoSelecionado.id);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao carregar imagem no chat.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleRecordVoiceNote = () => {
+    if (isRecording || isSending) return;
+    setIsRecording(true);
+    setRecordingTime(0);
+    
+    const timer = setInterval(() => {
+      setRecordingTime(t => t + 1);
+    }, 1000);
+
+    setTimeout(async () => {
+      clearInterval(timer);
+      setIsRecording(false);
+      
+      if (!usuarioLogado || !contatoSelecionado) return;
+      
+      try {
+        const msg = await enviarMensagem(usuarioLogado.id, contatoSelecionado.id, '[AUDIO]:https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3');
+        setMensagens(prev => [...prev, msg]);
+        carregarListaContatos(contatoSelecionado.id);
+      } catch (err) {
+        console.error(err);
+        alert('Erro ao enviar áudio.');
+      }
+    }, 2000);
+  };
+
+  const handleSendMedia = async (url: string) => {
+    if (!usuarioLogado || !contatoSelecionado) return;
+    setShowGifPanel(false);
+    try {
+      const msg = await enviarMensagem(usuarioLogado.id, contatoSelecionado.id, url);
+      setMensagens(prev => [...prev, msg]);
+      carregarListaContatos(contatoSelecionado.id);
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao enviar mídia.');
+    }
+  };
+
   const contatosFiltrados = contatos.filter(c => 
     c.nome.toLowerCase().includes(filtroBusca.toLowerCase()) ||
     c.email.toLowerCase().includes(filtroBusca.toLowerCase())
@@ -261,8 +421,12 @@ const ChatPage: React.FC = () => {
                     className={`chat-contact-item ${isSelected ? 'active' : ''} ${c.naoLidas > 0 ? 'unread' : ''}`}
                     onClick={() => handleSelecionarContato(c)}
                   >
-                    <div className="chat-contact-avatar">
-                      {iniciais || <UserCircle2 size={36} />}
+                    <div className="chat-contact-avatar" style={{ overflow: 'hidden' }}>
+                      {c.avatarUrl ? (
+                        <img src={c.avatarUrl} alt={c.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        iniciais || <UserCircle2 size={36} />
+                      )}
                       {c.naoLidas > 0 && <span className="chat-unread-badge">{c.naoLidas}</span>}
                     </div>
                     <div className="chat-contact-details">
@@ -295,14 +459,17 @@ const ChatPage: React.FC = () => {
                 >
                   <ArrowLeft size={20} />
                 </button>
-                <div className="chat-header-avatar">
-                  {contatoSelecionado.nome
-                    .split(' ')
-                    .slice(0, 2)
-                    .map(p => p[0])
-                    .join('')
-                    .toUpperCase()
-                  }
+                <div className="chat-header-avatar" style={{ overflow: 'hidden' }}>
+                  {contatoSelecionado.avatarUrl ? (
+                    <img src={contatoSelecionado.avatarUrl} alt={contatoSelecionado.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    contatoSelecionado.nome
+                      .split(' ')
+                      .slice(0, 2)
+                      .map(p => p[0])
+                      .join('')
+                      .toUpperCase()
+                  )}
                 </div>
                 <div className="chat-header-info">
                   <h4>{contatoSelecionado.nome}</h4>
@@ -335,11 +502,45 @@ const ChatPage: React.FC = () => {
                         <div 
                           key={m.id} 
                           className={`chat-message-bubble-wrapper ${isSentByMe ? 'sent' : 'received'}`}
+                          style={{ display: 'flex', gap: '0.5rem', margin: '0.5rem 0', alignItems: 'flex-end' }}
                         >
+                          {/* Recebido: Avatar do outro à esquerda */}
+                          {!isSentByMe && (
+                            <div className="chat-bubble-avatar-small" style={{ width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #0077ff, #00e5ff)', color: 'black', fontWeight: 'bold', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {contatoSelecionado.avatarUrl ? (
+                                <img src={contatoSelecionado.avatarUrl} alt={contatoSelecionado.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                contatoSelecionado.nome
+                                  .split(' ')
+                                  .slice(0, 2)
+                                  .map(p => p[0])
+                                  .join('')
+                                  .toUpperCase()
+                              )}
+                            </div>
+                          )}
+
+                          {/* Conteúdo da bolha */}
                           <div className="chat-message-bubble">
-                            <p>{m.conteudo}</p>
+                            {renderMessageContent(m.conteudo)}
                             <span className="chat-message-time">{timeStr}</span>
                           </div>
+
+                          {/* Enviado: Meu avatar à direita */}
+                          {isSentByMe && (
+                            <div className="chat-bubble-avatar-small" style={{ width: '28px', height: '28px', borderRadius: '50%', overflow: 'hidden', flexShrink: 0, background: 'linear-gradient(135deg, #00e5ff, #0077ff)', color: 'black', fontWeight: 'bold', fontSize: '11px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              {usuarioLogado.avatarUrl ? (
+                                <img src={usuarioLogado.avatarUrl} alt={usuarioLogado.nome} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                usuarioLogado.nome
+                                  .split(' ')
+                                  .slice(0, 2)
+                                  .map(p => p[0])
+                                  .join('')
+                                  .toUpperCase()
+                              )}
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -349,22 +550,112 @@ const ChatPage: React.FC = () => {
               </div>
 
               {/* Footer de Envio */}
-              <footer className="chat-window-footer">
-                <form onSubmit={handleEnviar} className="chat-input-form">
-                  <textarea 
-                    placeholder="Escreva sua mensagem aqui..."
-                    value={novoConteudo}
-                    onChange={(e) => setNovoConteudo(e.target.value)}
-                    onKeyDown={handleKeyPress}
-                    rows={1}
-                  />
-                  <button 
-                    type="submit" 
-                    disabled={!novoConteudo.trim() || isSending}
-                    className="chat-send-btn"
-                  >
-                    <Send size={18} />
-                  </button>
+              <footer className="chat-window-footer" style={{ position: 'relative' }}>
+                {/* File Input Oculto para Imagens */}
+                <input 
+                  type="file" 
+                  id="chat-image-file-input" 
+                  accept="image/*" 
+                  style={{ display: 'none' }}
+                  onChange={handleImageUpload}
+                />
+
+                {/* Painel de GIFs/Stickers */}
+                {showGifPanel && (
+                  <div className="chat-gif-sticker-panel">
+                    <div className="gif-panel-header">
+                      <span>GIFs e Stickers Populares</span>
+                      <button type="button" className="btn-close-gif" onClick={() => setShowGifPanel(false)}><X size={14} /></button>
+                    </div>
+                    <div className="gif-panel-grid-container">
+                      <div className="media-section-title">GIFs Animados</div>
+                      <div className="gif-grid">
+                        {TECH_GIFS.map((gif, gIdx) => (
+                          <div key={gIdx} className="gif-item-wrapper" onClick={() => handleSendMedia(gif.url)}>
+                            <img src={gif.url} alt={gif.name} />
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="media-section-title" style={{ marginTop: '1rem' }}>Stickers</div>
+                      <div className="sticker-grid">
+                        {TECH_STICKERS.map((st, sIdx) => (
+                          <div key={sIdx} className="sticker-item-wrapper" onClick={() => handleSendMedia(st.url)}>
+                            <img src={st.url} alt={st.name} />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <form onSubmit={handleEnviar} className="chat-input-form" style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                  {isRecording ? (
+                    <div className="recording-status-container" style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#ef4444', fontSize: '13px', padding: '0.5rem 0' }}>
+                      <span className="recording-dot" style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', display: 'inline-block' }} />
+                      <strong>Gravando mensagem de voz... ({recordingTime}s)</strong>
+                    </div>
+                  ) : (
+                    <textarea 
+                      placeholder="Escreva sua mensagem aqui..."
+                      value={novoConteudo}
+                      onChange={(e) => setNovoConteudo(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      rows={1}
+                      disabled={isUploading}
+                    />
+                  )}
+                  
+                  <div className="chat-input-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {!isRecording && (
+                      <>
+                        {/* Botão Gravar Voz */}
+                        <button 
+                          type="button" 
+                          className="chat-action-btn"
+                          onClick={handleRecordVoiceNote}
+                          title="Gravar mensagem de voz (2s)"
+                          style={{ background: 'none', border: 'none', color: '#a1a1aa', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Mic size={18} />
+                        </button>
+
+                        {/* Botão Upload Imagem */}
+                        <button 
+                          type="button" 
+                          className="chat-action-btn"
+                          onClick={() => document.getElementById('chat-image-file-input')?.click()}
+                          title="Enviar Imagem"
+                          disabled={isUploading}
+                          style={{ background: 'none', border: 'none', color: isUploading ? '#00e5ff' : '#a1a1aa', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          {isUploading ? <Loader2 size={18} className="spinner" /> : <ImageIcon size={18} />}
+                        </button>
+
+                        {/* Botão GIFs/Stickers */}
+                        <button 
+                          type="button" 
+                          className="chat-action-btn"
+                          onClick={() => setShowGifPanel(!showGifPanel)}
+                          title="Mandar GIF ou Sticker"
+                          style={{ background: 'none', border: 'none', color: showGifPanel ? '#00e5ff' : '#a1a1aa', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        >
+                          <Smile size={18} />
+                        </button>
+                      </>
+                    )}
+
+                    {/* Botão Enviar Mensagem padrão */}
+                    {!isRecording && (
+                      <button 
+                        type="submit" 
+                        disabled={!novoConteudo.trim() || isSending}
+                        className="chat-send-btn"
+                      >
+                        <Send size={18} />
+                      </button>
+                    )}
+                  </div>
                 </form>
               </footer>
             </div>
