@@ -65,3 +65,22 @@ export const listarContratacoesPorTalento = async (
 
   return response.json();
 };
+
+export const atualizarStatusContratacao = async (
+  id: number,
+  status: string
+): Promise<Contratacao> => {
+  const response = await fetch(`${API_URL}/${id}/status`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ status }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Falha ao atualizar status da contratação');
+  }
+
+  return response.json();
+};

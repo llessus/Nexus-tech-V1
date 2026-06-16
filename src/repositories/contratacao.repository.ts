@@ -84,3 +84,23 @@ export const listarContratacoesPorTalento = async (talentoId: number): Promise<C
     clienteEmail: row.cliente_email,
   }));
 };
+
+export const atualizarStatusContratacao = async (
+  id: number,
+  status: string
+): Promise<Contratacao> => {
+  const sql = getSQL();
+
+  const updated = await sql`
+    UPDATE contratacoes
+    SET status = ${status}
+    WHERE id = ${id}
+    RETURNING *
+  `;
+
+  if (updated.length === 0) {
+    throw new Error('Contratação não encontrada');
+  }
+
+  return toContratacao(updated[0]);
+};

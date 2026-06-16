@@ -18,6 +18,7 @@ import { getUsuarioLogado } from '../api/auth';
 import { listarTalentos, Talento } from '../api/talentos';
 import { listarContratacoesPorCliente, ContratacaoComTalento } from '../api/contratacoes';
 import { addNotification } from '../utils/notifications';
+import { salvarProjeto } from '../utils/projects';
 import './DashboardPage.css';
 
 const CATEGORIES = ["Todos", "Desenvolvedores", "Designers", "DevOps", "Mobile", "QA"];
@@ -615,12 +616,29 @@ const DashboardPage: React.FC = () => {
                         alert('Preencha ao menos o título e a descrição do projeto.');
                         return;
                       }
+                      salvarProjeto({
+                        tipo: projetoTipo,
+                        titulo: projetoTitulo,
+                        descricao: projetoDescricao,
+                        tecnologias: projetoTecnologias,
+                        orcamento: projetoOrcamento || 'A combinar',
+                        prazo: projetoPrazo || 'Sem prazo definido',
+                        clienteId: usuario?.id || 9999,
+                        clienteNome: usuario?.nome || 'Cliente Anônimo',
+                        clienteEmail: usuario?.email || 'cliente@nexus.tech'
+                      });
                       addNotification({
                         type: 'system',
                         title: 'Projeto Publicado',
                         description: `Seu projeto "${projetoTitulo}" foi publicado. Aguarde propostas dos profissionais.`,
                       });
                       setProjetoPublicado(true);
+                      // Limpar formulário
+                      setProjetoTitulo('');
+                      setProjetoDescricao('');
+                      setProjetoTecnologias('');
+                      setProjetoOrcamento('');
+                      setProjetoPrazo('');
                     }}
                     style={{
                       width: '100%', padding: '0.85rem', background: 'linear-gradient(135deg, #00e5ff, #0077ff)',

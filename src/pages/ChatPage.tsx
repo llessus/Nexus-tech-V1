@@ -107,7 +107,10 @@ const ChatPage: React.FC = () => {
       setSearchParams({});
     } else if (usuarioIdParam) {
       const uId = Number(usuarioIdParam);
-      abrirOuCriarContato(uId, 'Usuário', '', 'prestador');
+      const nomeParam = searchParams.get('nome') || 'Cliente';
+      const emailParam = searchParams.get('email') || '';
+      const tipoParam = (searchParams.get('tipoConta') as any) || 'cliente';
+      abrirOuCriarContato(uId, nomeParam, emailParam, tipoParam);
       setSearchParams({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

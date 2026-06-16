@@ -64,6 +64,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       console.error(erro);
       return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
     }
+  } else if (parts.length === 4 && parts[3] === 'status') {
+    if (req.method !== 'PUT' && req.method !== 'PATCH') {
+      return res.status(405).json({ erro: 'Método não permitido.' });
+    }
+
+    const id = Number(parts[2]);
+    if (isNaN(id)) {
+      return res.status(400).json({ erro: 'O id deve ser um número válido.' });
+    }
+
+    const { status } = req.body;
+    if (!status) {
+      return res.status(400).json({ erro: 'O status é obrigatório.' });
+    }
+
+    try {
+      const updated = await contratacaoRepository.atualizarStatusContratacao(id, status);
+      return res.json(updated);
+    } catch (erro) {
+      console.error(erro);
+      return res.status(500).json({ erro: 'Erro ao acessar o banco de dados.' });
+    }
   }
 
   return res.status(404).json({ erro: 'Rota não encontrada.' });
