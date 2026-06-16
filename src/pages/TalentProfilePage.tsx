@@ -36,6 +36,8 @@ const TalentProfilePage: React.FC = () => {
   const [editBio, setEditBio] = useState('');
   const [editAvatarUrl, setEditAvatarUrl] = useState<string | null>(null);
   const [editPortfolioImages, setEditPortfolioImages] = useState<string[]>([]);
+  const [editLocation, setEditLocation] = useState('');
+  const [editLanguages, setEditLanguages] = useState('');
   
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingPortfolioIdx, setUploadingPortfolioIdx] = useState<number | null>(null);
@@ -53,6 +55,18 @@ const TalentProfilePage: React.FC = () => {
         setEditBio(data.bio || '');
         setEditAvatarUrl(data.avatarUrl || null);
         setEditPortfolioImages(data.portfolioImages || []);
+        
+        // Load Location and Languages from localStorage or default
+        const metaRaw = localStorage.getItem(`nexus:talent_meta_${data.id}`);
+        if (metaRaw) {
+          const meta = JSON.parse(metaRaw);
+          setEditLocation(meta.location || '');
+          setEditLanguages(meta.languages || '');
+        } else {
+          setEditLocation(data.id % 2 === 0 ? "Remoto" : "São Paulo");
+          setEditLanguages("Português, Inglês");
+        }
+        
         setLoading(false);
       })
       .catch(err => {
@@ -147,6 +161,12 @@ const TalentProfilePage: React.FC = () => {
         portfolioImages: editPortfolioImages.filter(Boolean)
       });
 
+      // Save location and languages to localStorage
+      localStorage.setItem(`nexus:talent_meta_${talent.id}`, JSON.stringify({
+        location: editLocation,
+        languages: editLanguages
+      }));
+
       if (updated) {
         setTalent(updated);
         setEditNome(updated.nome);
@@ -178,6 +198,17 @@ const TalentProfilePage: React.FC = () => {
     setEditBio(talent.bio || '');
     setEditAvatarUrl(talent.avatarUrl || null);
     setEditPortfolioImages(talent.portfolioImages || []);
+
+    const metaRaw = localStorage.getItem(`nexus:talent_meta_${talent.id}`);
+    if (metaRaw) {
+      const meta = JSON.parse(metaRaw);
+      setEditLocation(meta.location || '');
+      setEditLanguages(meta.languages || '');
+    } else {
+      setEditLocation(talent.id % 2 === 0 ? "Remoto" : "São Paulo");
+      setEditLanguages("Português, Inglês");
+    }
+
     setIsEditing(false);
   };
 
@@ -285,10 +316,34 @@ const TalentProfilePage: React.FC = () => {
               
               <div className="profile-meta">
                 <div className="profile-meta-item">
-                  <MapPin size={16} /> {location}
+                  <MapPin size={16} />
+                  {isEditing ? (
+                    <input 
+                      type="text" 
+                      value={editLocation} 
+                      onChange={e => setEditLocation(e.target.value)} 
+                      className="profile-inline-input"
+                      style={{ fontSize: '0.85rem', width: '120px', padding: '0.2rem 0.5rem', background: 'rgba(31, 41, 55, 0.5)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', borderRadius: '0.25rem', outline: 'none' }}
+                      placeholder="Cidade"
+                    />
+                  ) : (
+                    editLocation
+                  )}
                 </div>
                 <div className="profile-meta-item">
-                  <Globe size={16} /> Português, Inglês
+                  <Globe size={16} />
+                  {isEditing ? (
+                    <input 
+                      type="text" 
+                      value={editLanguages} 
+                      onChange={e => setEditLanguages(e.target.value)} 
+                      className="profile-inline-input"
+                      style={{ fontSize: '0.85rem', width: '180px', padding: '0.2rem 0.5rem', background: 'rgba(31, 41, 55, 0.5)', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#fff', borderRadius: '0.25rem', outline: 'none' }}
+                      placeholder="Idiomas"
+                    />
+                  ) : (
+                    editLanguages
+                  )}
                 </div>
               </div>
             </div>
