@@ -251,6 +251,18 @@
   font-weight: 600;
 }
 
+.status-badge.recusado {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+}
+
+.status-badge.confirmado {
+  background: rgba(250, 204, 21, 0.1);
+  border-color: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+}
+
 .card-divider {
   height: 1px;
   background: rgba(255, 255, 255, 0.05);

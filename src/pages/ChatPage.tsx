@@ -104,14 +104,14 @@ const ChatPage: React.FC = () => {
         })
         .catch(err => console.error(err));
       // Remove query param para não re-abrir
-      setSearchParams({});
+      setSearchParams({}, { replace: true });
     } else if (usuarioIdParam) {
       const uId = Number(usuarioIdParam);
       const nomeParam = searchParams.get('nome') || 'Cliente';
       const emailParam = searchParams.get('email') || '';
       const tipoParam = (searchParams.get('tipoConta') as any) || 'cliente';
       abrirOuCriarContato(uId, nomeParam, emailParam, tipoParam);
-      setSearchParams({});
+      setSearchParams({}, { replace: true });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);

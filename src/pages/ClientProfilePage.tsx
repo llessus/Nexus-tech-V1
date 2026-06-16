@@ -35,7 +35,19 @@ const ClientProfilePage: React.FC = () => {
 
         // Fetch hired services history
         const servicesData = await listarContratacoesPorCliente(Number(id));
-        setContratacoes(servicesData);
+        
+        // Filter out dismissed recusado contracts
+        const dismissedRaw = localStorage.getItem('nexus:dismissed_recusados');
+        const dismissedIds: number[] = dismissedRaw ? JSON.parse(dismissedRaw) : [];
+        const filtered = servicesData.filter(c => !(c.status === 'Recusado' && dismissedIds.includes(c.id)));
+        setContratacoes(filtered);
+
+        // Mark the currently displayed Recusado contracts as dismissed so next time they don't load
+        const currentRecusados = filtered.filter(c => c.status === 'Recusado');
+        if (currentRecusados.length > 0) {
+          const newDismissed = [...dismissedIds, ...currentRecusados.map(c => c.id)];
+          localStorage.setItem('nexus:dismissed_recusados', JSON.stringify(newDismissed));
+        }
       } catch (err) {
         console.error('Erro ao carregar dados do cliente:', err);
       } finally {
@@ -242,7 +254,7 @@ const ClientProfilePage: React.FC = () => {
                         <p>{c.talentoRole}</p>
                       </div>
                     </div>
-                    <div className="status-badge">
+                    <div className={`status-badge ${c.status.toLowerCase()}`}>
                       <CheckCircle2 size={14} />
                       <span>{c.status}</span>
                     </div>
@@ -266,9 +278,25 @@ const ClientProfilePage: React.FC = () => {
                   </div>
 
                   <div className="card-footer">
-                    <button className="btn-outline btn-full" onClick={() => navigate(`/chat?talentoId=${c.talentoId}`)}>
-                      Entrar em contato
-                    </button>
+                    {c.status === 'Recusado' ? (
+                      <button 
+                        className="btn-outline btn-full" 
+                        onClick={() => {
+                          const dismissedRaw = localStorage.getItem('nexus:dismissed_recusados');
+                          const dismissedIds: number[] = dismissedRaw ? JSON.parse(dismissedRaw) : [];
+                          const newDismissed = [...dismissedIds, c.id];
+                          localStorage.setItem('nexus:dismissed_recusados', JSON.stringify(newDismissed));
+                          setContratacoes(prev => prev.filter(item => item.id !== c.id));
+                        }}
+                        style={{ borderColor: 'rgba(239, 68, 68, 0.4)', color: '#ef4444', background: 'rgba(239, 68, 68, 0.05)', fontWeight: 700 }}
+                      >
+                        Descartar Aviso
+                      </button>
+                    ) : (
+                      <button className="btn-outline btn-full" onClick={() => navigate(`/chat?talentoId=${c.talentoId}`)}>
+                        Entrar em contato
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

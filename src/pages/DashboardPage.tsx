@@ -81,8 +81,19 @@ const DashboardPage: React.FC = () => {
       setLoadingContratacoes(true);
       listarContratacoesPorCliente(usuario.id)
         .then(data => {
-          setContratacoes(data);
+          // Filter out dismissed recusado contracts
+          const dismissedRaw = localStorage.getItem('nexus:dismissed_recusados');
+          const dismissedIds: number[] = dismissedRaw ? JSON.parse(dismissedRaw) : [];
+          const filtered = data.filter(c => !(c.status === 'Recusado' && dismissedIds.includes(c.id)));
+          setContratacoes(filtered);
           setLoadingContratacoes(false);
+
+          // Mark current recusados as dismissed
+          const currentRecusados = filtered.filter(c => c.status === 'Recusado');
+          if (currentRecusados.length > 0) {
+            const newDismissed = [...dismissedIds, ...currentRecusados.map(c => c.id)];
+            localStorage.setItem('nexus:dismissed_recusados', JSON.stringify(newDismissed));
+          }
         })
         .catch(err => {
           console.error('Erro ao buscar contratações:', err);
@@ -394,7 +405,14 @@ const DashboardPage: React.FC = () => {
                       </div>
 
                       <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#10b981', fontSize: '0.8rem', fontWeight: 600 }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '0.35rem', 
+                          color: c.status === 'Recusado' ? '#ef4444' : c.status === 'Confirmado' ? '#facc15' : '#10b981', 
+                          fontSize: '0.8rem', 
+                          fontWeight: 600 
+                        }}>
                           <CheckCircle2 size={14} />
                           <span>{c.status}</span>
                         </div>
@@ -404,26 +422,52 @@ const DashboardPage: React.FC = () => {
                         <span style={{ fontSize: '0.75rem', color: '#a1a1aa' }}>
                           Carga: {c.horas}h
                         </span>
-                        <button
-                          onClick={() => {
-                            setShowContratacoesModal(false);
-                            navigate(`/chat?talentoId=${c.talentoId}`);
-                          }}
-                          style={{
-                            background: 'rgba(0, 229, 255, 0.1)',
-                            border: '1px solid rgba(0, 229, 255, 0.3)',
-                            color: '#00e5ff',
-                            borderRadius: '0.25rem',
-                            padding: '0.25rem 0.5rem',
-                            fontSize: '0.7rem',
-                            cursor: 'pointer',
-                            marginTop: '0.35rem',
-                            fontWeight: 600,
-                            transition: 'all 0.2s'
-                          }}
-                        >
-                          Chat com Talento
-                        </button>
+                        {c.status === 'Recusado' ? (
+                          <button
+                            onClick={() => {
+                              const dismissedRaw = localStorage.getItem('nexus:dismissed_recusados');
+                              const dismissedIds: number[] = dismissedRaw ? JSON.parse(dismissedRaw) : [];
+                              const newDismissed = [...dismissedIds, c.id];
+                              localStorage.setItem('nexus:dismissed_recusados', JSON.stringify(newDismissed));
+                              setContratacoes(prev => prev.filter(item => item.id !== c.id));
+                            }}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.1)',
+                              border: '1px solid rgba(239, 68, 68, 0.3)',
+                              color: '#ef4444',
+                              borderRadius: '0.25rem',
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '0.7rem',
+                              cursor: 'pointer',
+                              marginTop: '0.35rem',
+                              fontWeight: 600,
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Descartar Aviso
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setShowContratacoesModal(false);
+                              navigate(`/chat?talentoId=${c.talentoId}`);
+                            }}
+                            style={{
+                              background: 'rgba(0, 229, 255, 0.1)',
+                              border: '1px solid rgba(0, 229, 255, 0.3)',
+                              color: '#00e5ff',
+                              borderRadius: '0.25rem',
+                              padding: '0.25rem 0.5rem',
+                              fontSize: '0.7rem',
+                              cursor: 'pointer',
+                              marginTop: '0.35rem',
+                              fontWeight: 600,
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            Chat com Talento
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
